@@ -49,3 +49,30 @@ if ( !options.appId || !options.masterKey || !options.serverURL) {
   console.error("");
   process.exit(1);
 }
+
+const app = express();
+const api = new ParseServer(options);
+app.use(options.mountPath, api);
+
+var server = app.listen(options.port, function() {
+  for (let key in options) {
+    let value = options[key];
+    if ( key == 'masterKey') {
+      value = '***REDACTED***';
+    }
+    console.log(`${key}: ${value}`);
+  }
+
+  console.log('');
+  console.log('parse-server running on ' + options.serverURL);
+});
+
+var handleShutdown = function() {
+  console.log('Termination signal received. Shutting down.');
+  server.close(function(){
+    process.exit(0);
+  });
+};
+
+// process.on('SIGTERM', handleShutdown);
+// process.on('SIGINT', handleShutdown);
