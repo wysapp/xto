@@ -49,7 +49,6 @@ if ( !options.appId || !options.masterKey || !options.serverURL) {
   console.error("");
   process.exit(1);
 }
-console.log(options);
 const app = express();
 const api = new ParseServer(options);
 app.use(options.mountPath, api);

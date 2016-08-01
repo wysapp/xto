@@ -1,6 +1,7 @@
 var batch = require('./batch'),
     bodyParser = require('body-parser'),
     express = require('express'),
+    middlewares = require('./middlewares'),
     multer = require('multer'),
     Parse = require('parse/node').Parse,
     path = require('path');
@@ -13,10 +14,25 @@ import {logger, configureLogger} from './logger';
 import AppCache from './cache';
 import Config from './Config';
 
+
+import { FilesRouter } from './Routers/FilesRouter';
+
+import { GridStoreAdapter } from './Adapters/Files/GridStoreAdapter';
+import { loadAdapter } from './Adapters/AdapterLoader';
+
 import requiredParameter from './requiredParameter';
 
+import DatabaseController from './Controllers/DatabaseController';
+const SchemaController = require('./Controllers/SchemaController');
 import MongoStorageAdapter from './Adapters/Storage/Mongo/MongoStorageAdapter';
 
+
+const requiredUserFields = {
+  fields: {
+    ...SchemaController.defaultColumns._Default,
+    ...SchemaController.defaultColumns._User
+  }
+};
 
 class ParseServer {
   constructor({
@@ -87,6 +103,33 @@ class ParseServer {
     if(logsFolder) {
       configureLogger({logsFolder, jsonLogs});
     }
+
+    if (verbose || process.env.VERBOSE || process.env.VERBOSE_PARSE_SERVER) {
+      configureLogger({level: 'silly', jsonLogs});
+    }
+
+    const fileControllerAdapter = loadAdapter(filesAdapter, () => {
+      return new GridStoreAdapter(databaseURI);
+    });
+
+    const databaseController = new DatabaseController(databaseAdapter);
+
+    let userClassPromise = databaseController.loadSchema()
+    .then(schema => schema.enforceClassExists('_User'));
+    
+    let usernameUniqueness = userClassPromise
+    .then(() => databaseController.adapter.ensureUniqueness('_User', requiredUserFields, ['username']))
+    .catch(error => {
+      logger.warn('Unable to ensure uniqueness for useranems: ', error);
+    });
+
+    let emailUniqueness = userClassPromise
+    .then(() => databaseController.adapter.ensureUniqueness('_User', requiredUserFields, ['email']))
+    .catch(error => {
+      logger.warn('Unabled to ensure uniqueness for user email addresses: ', error);
+      return Promise.reject(error);
+    });
+
     
     AppCache.put(appId, {
       appId ,
@@ -98,6 +141,10 @@ class ParseServer {
 
     Config.validate(AppCache.get(appId));
     this.config = AppCache.get(appId);
+
+    if (process.env.TESTING) {
+      __indexBuildCompletionCallbackForTests(Promise.all([usernameUniqueness, emailUniqueness]));
+    }
   }
 
   get app() {
@@ -106,6 +153,8 @@ class ParseServer {
 
   static app({maxUploadSize = '20mb', appId}) {
     var api = express();
+
+    api.use('/', middlewares.allowCrossDomain, new FilesRouter().getExpressRouter({maxUploadSize: maxUploadSize}));
 
     api.use('/', bodyParser.urlencoded({extended: false}) );
 
