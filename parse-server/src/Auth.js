@@ -15,6 +15,16 @@ function Auth({config, isMaster = false, user, installationId} = {} ) {
 
 
 
+function master(config) {
+  return new Auth({config, isMaster: true});
+}
+
+
+function nobody(config) {
+  return new Auth({config, isMaster: false});
+}
+
+
 var getAuthForSessionToken = function({config, sessionToken, installationId} = {} ) {
   return config.cacheController.user.get(sessionToken).then((userJSON) => {
     if (userJSON) {
@@ -35,12 +45,28 @@ var getAuthForSessionToken = function({config, sessionToken, installationId} = {
       }
 
       var now = new Date();
-    })
-  })
-}
+      var expiresAt = results[0].expiresAt ? new Date(results[0].expiresAt.iso) : undefined;
+
+      if ( expiresAt < now) {
+        throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN, 'Session token is expired.');
+      }
+
+      var obj = results[0]['user'];
+      delete obj.password;
+      obj['className'] = '_User';
+      obj['sessionToken'] = sessionToken;
+      
+      config.cacheController.user.put(sessionToken, obj);
+      let userObject = Parse.Object.fromJSON(obj);
+      return new Auth({config, isMaster: false, installationId, user: userObject});
+    });
+  });
+};
 
 
 module.exports = {
   Auth: Auth,
+  master: master,
+  nobody: nobody,
   getAuthForSessionToken: getAuthForSessionToken,
 }

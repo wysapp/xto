@@ -20,7 +20,9 @@ import { FilesRouter } from './Routers/FilesRouter';
 import { GridStoreAdapter } from './Adapters/Files/GridStoreAdapter';
 import { loadAdapter } from './Adapters/AdapterLoader';
 
+import PromiseRouter from './PromiseRouter';
 import requiredParameter from './requiredParameter';
+import { FeaturesRouter } from './Routers/FeaturesRouter';
 
 import DatabaseController from './Controllers/DatabaseController';
 const SchemaController = require('./Controllers/SchemaController');
@@ -162,12 +164,41 @@ class ParseServer {
       api.use('/', require('./testing-routes').router);
     }
 
-    let routers = [];
+     
 
     api.use(bodyParser.json({'type': '*/*', limit: maxUploadSize}));
+    api.use(middlewares.allowCrossDomain);
+    api.use(middlewares.allowMethodOverride);
+    api.use(middlewares.handleParseHeaders);
+
+
+    let routers = [
+      new FeaturesRouter()
+    ];
 
     if (process.env.PARSE_EXPERIMENTAL_HOOKS_ENABLED || process.env.TESTING) {
-      
+      routers.push(new HooksRouter());
+    }
+
+    let routes = routers.reduce((memo, router) => {
+      return memo.concat(router.routes);
+    },[]);
+
+    let appRouter = new PromiseRouter(routes, appId);
+    batch.mountOnto(appRouter);
+    api.use(appRouter.expressApp());
+
+    api.use(middlewares.handleParseErrors);
+
+    if(!process.env.TESTING) {
+      process.on('uncaughtException', (err) => {
+        if (err.code === 'EADDRINUSE') {
+          console.error(`Unable to listen on port ${err.port}. the port is already in use.`);
+          process.exit(0);
+        } else {
+          throw err;
+        }
+      });
     }
 
     return api;
