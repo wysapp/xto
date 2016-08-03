@@ -1,12 +1,15 @@
+
 function numberParser(key) {
   return function(opt) {
     opt = parseInt(opt);
     if (!Number.isInteger(opt)) {
+
       throw new Error(`The ${key} is invalid`);
     }
     return opt;
   }
 }
+
 
 function objectParser(opt) {
   if (typeof opt == 'object') {
@@ -17,20 +20,27 @@ function objectParser(opt) {
 
 function moduleOrObjectParser(opt) {
   if (typeof opt == 'object')  {
+
     return opt;
   }
   try {
     return JSON.parse(opt);
   } catch(e) {}
+
+
   return opt;
 }
 
 function booleanParser(opt) {
+
   if (opt == true || opt == "true" || opt == "1") {
+
     return true;
   }
   return false;
 }
+
+
 
 export default {
   "appId": {
@@ -146,11 +156,13 @@ export default {
     help: "Enable (or disable) user email validation, defaults to false",
     action: booleanParser
   },
+
   "preventLoginWithUnverifiedEmail": {
     env: "PARSE_SERVER_PREVENT_LOGIN_WITH_UNVERIFIED_EMAIL",
     help: "Prevent user from login if email is not verified and PARSE_SERVER_VERIFY_USER_EMAILS is true, defaults to false",
     action: booleanParser
   },
+
   "appName": {
     env: "PARSE_SERVER_APP_NAME",
     help: "Sets the app name"
@@ -184,13 +196,17 @@ export default {
     env: "VERBOSE",
     help: "Set the logging to verbose"
   },
+
   "jsonLogs": {
     env: "JSON_LOGS",
     help: "Log as structured JSON objects"
   },
+
   "revokeSessionOnPasswordReset": {
     env: "PARSE_SERVER_REVOKE_SESSION_ON_PASSWORD_RESET",
     help: "When a user changes their password, either through the reset password email or while logged in, all sessions are revoked if this is true. Set to false if you don't want to revoke sessions.",
     action: booleanParser
   }
+
 };
+
