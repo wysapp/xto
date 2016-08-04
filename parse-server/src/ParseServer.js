@@ -156,6 +156,12 @@ class ParseServer {
   static app({maxUploadSize = '20mb', appId}) {
     var api = express();
 
+    api.use(function(req,res,next){
+      console.log('url: ' , req.originalUrl);
+      console.log(req.headers, req.body, req.params, req.query);
+      next();
+    })
+
     api.use('/', middlewares.allowCrossDomain, new FilesRouter().getExpressRouter({maxUploadSize: maxUploadSize}));
 
     api.use('/', bodyParser.urlencoded({extended: false}) );
@@ -164,7 +170,7 @@ class ParseServer {
       api.use('/', require('./testing-routes').router);
     }
 
-     
+    
 
     api.use(bodyParser.json({'type': '*/*', limit: maxUploadSize}));
     api.use(middlewares.allowCrossDomain);

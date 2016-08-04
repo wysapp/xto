@@ -1,6 +1,6 @@
 import { version } from '../../package.json';
 import PromiseRouter from '../PromiseRouter';
-import * as middlesare from './middlewares';
+import * as middlesare from '../middlewares';
 
 export class FeaturesRouter extends PromiseRouter {
   mountRouters() {

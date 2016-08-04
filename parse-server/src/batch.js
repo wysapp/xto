@@ -55,4 +55,6 @@ function handleBatch(router, req) {
 }
 
 
-module.exports = {};
+module.exports = {
+  mountOnto: mountOnto
+};
