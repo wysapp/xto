@@ -158,7 +158,7 @@ class ParseServer {
 
     api.use(function(req,res,next){
       console.log('url: ' , req.originalUrl);
-      console.log(req.headers, req.body, req.params, req.query);
+      console.log(req.headers);
       next();
     })
 
@@ -169,8 +169,7 @@ class ParseServer {
     if (process.env.TESTING == 1) {
       api.use('/', require('./testing-routes').router);
     }
-
-    
+  
 
     api.use(bodyParser.json({'type': '*/*', limit: maxUploadSize}));
     api.use(middlewares.allowCrossDomain);

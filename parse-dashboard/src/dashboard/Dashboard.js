@@ -81,7 +81,7 @@ class Dashboard extends React.Component {
             app.serverInfo = serverInfo;
             return app;
           }, error => {
-            console.log('error: ', error);
+            
             if ( error.code === 100) {
               app.serverInfo = {
                 error: 'unable to connect to server',

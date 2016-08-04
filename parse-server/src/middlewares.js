@@ -31,13 +31,11 @@ function handleParseHeaders(req, res, next) {
   };
 
   var basicAuth = httpAuth(req);
-
   if (basicAuth) {
     info.appId = basicAuth.appId
     info.masterKey = basicAuth.masterKey || info.masterKey;
     info.javascriptKey = basicAuth.javascriptKey || info.javascriptKey;
   }
-
   if (req.body) {
     // Unity SDK sends a _noBody key which needs to be removed.
     // Unclear at this point if action needs to be taken.
@@ -45,8 +43,8 @@ function handleParseHeaders(req, res, next) {
   }
 
   var fileViaJSON = false;
-
   if (!info.appId || !AppCache.get(info.appId)) {
+
     // See if we can find the app id on the body.
     if (req.body instanceof Buffer) {
       // The only chance to find the app id is if this is a file
@@ -139,7 +137,6 @@ function handleParseHeaders(req, res, next) {
   if (req.url == "/login") {
     delete info.sessionToken;
   }
-
   if (!info.sessionToken) {
     req.auth = new auth.Auth({ config: req.config, installationId: info.installationId, isMaster: false });
     next();
