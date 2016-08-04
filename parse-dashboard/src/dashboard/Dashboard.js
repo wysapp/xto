@@ -1,8 +1,18 @@
 
+
+import AppsManager from 'lib/AppsManager';
+import FourOhFour from 'components/FourOhFour/FourOhFour.react';
+
+import history from 'dashboard/history';
+
+import Loader from 'components/Loader/Loader.react';
+
 import Parse from 'parse';
 import ParseApp from 'lib/ParseApp';
 import React from 'react';
 
+
+import { AsyncStatus } from 'lib/Constants';
 import { center } from 'stylesheets/base.scss';
 import { get } from 'lib/AJAX';
 import { setBasePath } from 'lib/AJAX';
@@ -13,7 +23,13 @@ import {
   Redirect
 } from 'react-router';
 
-import { AsyncStatus } from 'lib/Constants';
+
+let App = React.createClass({
+  render() {
+    return <div>Not yet implemented</div>;
+  }
+});
+
 
 
 const PARSE_DOT_COM_SERVER_INFO = {
@@ -126,7 +142,33 @@ class Dashboard extends React.Component {
   }
 
   render() {
-    return <div>asdfasdfasdfasdfsadf</div>
+    if( this.state.configLoadingState === AsyncStatus.PROGRESS) {
+      return <div className={center}><Loader/></div>;
+    }
+
+    if(this.state.configLoadingError && this.state.configLoadingError.length > 1) {
+      return <div className={styles.empty}>
+        <div className={center}>
+          <div className={styles.cloud}>
+            <Icon width={110} height={110} name='cloud-surprise' fill='#1e3b4d' />
+          </div>
+        
+          <div className={styles.loadingError}>{this.state.configLoadingError.replace(/-/g, '\u2011')}</div>
+        </div>
+      </div>
+    }
+
+    const AppsIndexPage = () => (
+      <div>asdfasdfasdfasdfsadfsadf</div>
+    );
+
+    return <Router history={history}>
+      <Redirect from='/' to='/apps' />
+      <Route path='/' component={App}>
+        <Route path='apps' component={AppsIndexPage} />
+      </Route>
+      <Route path='*' component={FourOhFour} />
+    </Router>
   }
 }
 

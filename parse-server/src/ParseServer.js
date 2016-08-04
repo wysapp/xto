@@ -24,8 +24,11 @@ import PromiseRouter from './PromiseRouter';
 import requiredParameter from './requiredParameter';
 import { FeaturesRouter } from './Routers/FeaturesRouter';
 
+import { PushController } from './Controllers/PushController';
+
 import DatabaseController from './Controllers/DatabaseController';
 const SchemaController = require('./Controllers/SchemaController');
+import ParsePushAdapter from 'parse-server-push-adapter';
 import MongoStorageAdapter from './Adapters/Storage/Mongo/MongoStorageAdapter';
 
 
@@ -114,6 +117,10 @@ class ParseServer {
       return new GridStoreAdapter(databaseURI);
     });
 
+    const pushControllerAdapter = loadAdapter(push && push.adapter, ParsePushAdapter, push || {});
+
+
+    const pushController = new PushController(pushControllerAdapter, appId, push);
     const databaseController = new DatabaseController(databaseAdapter);
 
     let userClassPromise = databaseController.loadSchema()
@@ -138,6 +145,9 @@ class ParseServer {
       masterKey ,
       serverURL,
       javascriptKey,
+
+      pushController: pushController,
+
       maxUploadSize
     });
 
@@ -158,7 +168,6 @@ class ParseServer {
 
     api.use(function(req,res,next){
       console.log('url: ' , req.originalUrl);
-      console.log(req.headers);
       next();
     })
 

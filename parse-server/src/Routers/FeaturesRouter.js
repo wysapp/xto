@@ -3,7 +3,7 @@ import PromiseRouter from '../PromiseRouter';
 import * as middlesare from '../middlewares';
 
 export class FeaturesRouter extends PromiseRouter {
-  mountRouters() {
+  mountRoutes() {
     this.route('GET', '/serverInfo', middlesare.promiseEnforceMasterKeyAccess, req => {
       const features = {
         globalConfig: {
