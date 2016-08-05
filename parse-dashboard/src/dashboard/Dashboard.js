@@ -32,7 +32,6 @@ let App = React.createClass({
 });
 
 
-
 const PARSE_DOT_COM_SERVER_INFO = {
   features: {
     schemas: {
@@ -165,11 +164,11 @@ class Dashboard extends React.Component {
       </AccountView>
     );
 
+
     return <Router history={history}>
       <Redirect from='/' to='/apps' />
       <Route path='/' component={App}>
-        <Route path='apps' component={AppsIndexPage} />
-        
+        <Route path='apps' component={AppsIndexPage} />        
       </Route>
       <Route path='*' component={FourOhFour} />
     </Router>
