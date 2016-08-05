@@ -1,4 +1,5 @@
 
+import AccountView from './AccountView.react';
 
 import AppsManager from 'lib/AppsManager';
 import FourOhFour from 'components/FourOhFour/FourOhFour.react';
@@ -159,13 +160,16 @@ class Dashboard extends React.Component {
     }
 
     const AppsIndexPage = () => (
-      <div>asdfasdfasdfasdfsadfsadf</div>
+      <AccountView section='Your Apps'>
+        <AppsIndex newFeaturesInLatestVersion={this.state.newFeaturesInLatestVersion}/>
+      </AccountView>
     );
 
     return <Router history={history}>
       <Redirect from='/' to='/apps' />
       <Route path='/' component={App}>
         <Route path='apps' component={AppsIndexPage} />
+        
       </Route>
       <Route path='*' component={FourOhFour} />
     </Router>
