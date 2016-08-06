@@ -22,6 +22,7 @@ import { loadAdapter } from './Adapters/AdapterLoader';
 
 import PromiseRouter from './PromiseRouter';
 import requiredParameter from './requiredParameter';
+import { ClassesRouter } from './Routers/ClassesRouter';
 import { FeaturesRouter } from './Routers/FeaturesRouter';
 
 import { PushController } from './Controllers/PushController';
@@ -167,7 +168,7 @@ class ParseServer {
     var api = express();
 
     api.use(function(req,res,next){
-      console.log('url: ' , req.originalUrl);
+      console.log(req.method + ' : ' , req.originalUrl);
       next();
     })
 
@@ -187,6 +188,7 @@ class ParseServer {
 
 
     let routers = [
+      new ClassesRouter(),
       new FeaturesRouter()
     ];
 

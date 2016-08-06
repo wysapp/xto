@@ -1,5 +1,6 @@
 
 import AccountView from './AccountView.react';
+import AppsIndex from './Apps/AppsIndex.react';
 
 import AppsManager from 'lib/AppsManager';
 import FourOhFour from 'components/FourOhFour/FourOhFour.react';
@@ -167,7 +168,7 @@ class Dashboard extends React.Component {
 
     return <Router history={history}>
       <Redirect from='/' to='/apps' />
-      <Route path='/' component={App}>
+      <Route path='/'>
         <Route path='apps' component={AppsIndexPage} />        
       </Route>
       <Route path='*' component={FourOhFour} />

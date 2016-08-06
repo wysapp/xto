@@ -92,4 +92,38 @@ function RestQuery(config, auth, className, restWhere = {}, restOptions = {}, cl
 }
 
 
+RestQuery.prototype.execute = function() {
+  return Promise.resolve().then(() => {
+    return this.buildRestWhere();
+  }).then(()=> {
+    return this.runFind();
+  }).then(() => {
+    return this.runCount();
+  }).then(() => {
+    return this.handleInclude();
+  }).then(() => {
+    return this.response;
+  });
+};
+
+
+RestQuery.prototype.buildRestWhere = function() {
+  return Promise.resolve().then(() => {
+    return this.getUserAndRoleACL();
+  }).then(() => {
+    return this.redirectClassNameForKey();
+  }).then(() => {
+    return this.validateClientClassCreation();
+  }).then(() => {
+    return this.replaceSelect();
+  }).then(() => {
+    return this.replaceDontSelect();
+  }).then(() => {
+    return this.replaceInQuery();
+  }).then(() => {
+    return this.replaceNotInQuery();
+  });
+};
+
+
 module.exports = RestQuery;

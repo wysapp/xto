@@ -17,7 +17,17 @@ const AppsManager = {
     });
 
     return appsStore;
-  }
+  },
+
+  getAllAppsIndexStats() {
+    return Parse.Promise.when(this.apps().map(app => {
+      return Parse.Promise.when(
+        app.getClassCount('_Installation').then(count => app.installations = count),
+        app.getClassCount('_User').then(count => app.users = count)
+      );
+    }));
+  },
+
 }
 
 export default AppsManager;
