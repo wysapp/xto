@@ -210,6 +210,14 @@ class SchemaController {
     .then(allSchema => allSchema.map(injectDefaultSchema));
   }
 
+  getOneSchema(className, allowVolatileClasses = false) {
+    if (allowVolatileClasses && volatileClasses.indexOf(className) > -1) {
+      return Promise.resolve(this.data[className]);
+    }
+    return this._dbAdapter.getClass(className)
+    .then(injectDefaultSchema)
+  }
+
 
   addClassIfNotExists(className, fields = {}, classLevelPermissions) {
     var validationError = this.validateNewClass(className, fields, classLevelPermissions);

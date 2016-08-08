@@ -130,6 +130,12 @@ export class MongoStorageAdapter {
     );
   }
 
+  getClass(className) {
+    return this._schemaCollection()
+    .then(schemasCollection => schemasCollection._fechOneSchemaFrom_SCHEMA(className))
+  }
+
+
   ensureUniqueness(className, schema, fieldNames) {
     schema = convertParseSchemaToMongoSchema(schema);
     let indexCreateionRequest = {};
@@ -147,6 +153,19 @@ export class MongoStorageAdapter {
       }
     });
   }
+
+  // Used in tests
+  _rawFind(className, query) {
+    return this._adaptiveCollection(className).then(collection => collection.find(query));
+  }
+
+  // Executs a count.
+  count(className, schema, query) {
+    schema = convertParseSchemaToMongoSchema(schema);
+    return this._adaptiveCollection(className)
+    .then(collection => collection.count(transformWhere(className, query, schema)));
+  }
+  
 
 }
 

@@ -1,13 +1,17 @@
 
 import AccountView from './AccountView.react';
+import AppData from './AppData.react';
 import AppsIndex from './Apps/AppsIndex.react';
 
 import AppsManager from 'lib/AppsManager';
+import Browser from './Data/Browser/Browser.react';
 import FourOhFour from 'components/FourOhFour/FourOhFour.react';
 
 import history from 'dashboard/history';
 
 import Loader from 'components/Loader/Loader.react';
+
+import Migration from './Data/Migration/Migration.react';
 
 import Parse from 'parse';
 import ParseApp from 'lib/ParseApp';
@@ -27,6 +31,13 @@ import {
 
 
 let App = React.createClass({
+  render() {
+    return this.props.children;
+  }
+});
+
+
+let Empty = React.createClass({
   render() {
     return <div>Not yet implemented</div>;
   }
@@ -168,8 +179,18 @@ class Dashboard extends React.Component {
 
     return <Router history={history}>
       <Redirect from='/' to='/apps' />
-      <Route path='/'>
-        <Route path='apps' component={AppsIndexPage} />        
+      <Route path='/' component={App}>
+        <Route path='apps' component={AppsIndexPage} />   
+
+        <Redirect from='apps/:appId' to='/apps/:appId/browser' />
+        <Route path='apps/:appId' component={AppData}>
+          <Route path='getting_started' component={Empty} />
+          <Route path='browser' component={false ? SchemaOverview : Browser} />
+
+          // <Route path='migration' component={Migration} />
+
+        </Route>
+
       </Route>
       <Route path='*' component={FourOhFour} />
     </Router>

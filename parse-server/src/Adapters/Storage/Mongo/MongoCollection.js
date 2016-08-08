@@ -16,6 +16,12 @@ export default class MongoCollection {
   }
 
 
+  count(query, { skip, limit, sort } = {}) {
+    return this._mongoCollection.count(query, { skip, limit, sort });
+  }
+
+
+
   insertOne(object) {
     return this._mongoCollection.insertOne(object);
   }

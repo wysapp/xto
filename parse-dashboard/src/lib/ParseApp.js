@@ -95,4 +95,16 @@ export default class ParseApp {
     })
     return p;
   }
+
+  getMigrations() {
+    let path = '/apps/' + this.slug + '/migrations';
+    let obj = AJAX.abortableGet(path);
+    this.hasCheckedForMigraton = true;
+    obj.promise.then(({migration}) => {
+      this.migration = migration;
+    });
+
+    return obj;
+  }
+
 }

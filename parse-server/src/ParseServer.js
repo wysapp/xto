@@ -149,7 +149,8 @@ class ParseServer {
 
       pushController: pushController,
 
-      maxUploadSize
+      maxUploadSize,
+      databaseController
     });
 
     Config.validate(AppCache.get(appId));

@@ -78,6 +78,16 @@ function mongoSchemaToParseSchema(mongoSchema) {
   };
 }
 
+function _mongoSchemaQueryFromNameQuery(name: string, query) {
+  let object = { _id: name };
+  if (query) {
+    Object.keys(query).forEach(key => {
+      object[key] = query[key];
+    });
+  }
+  return object;
+}
+
 
 function parseFieldTypeToMongoFieldType({type, targetClass}) {
   switch(type) {
@@ -105,6 +115,18 @@ class MongoSchemaCollection {
     return this._collection._rawFind({})
     .then(schemas => schemas.map(mongoSchemaToParseSchema));
   }
+
+  _fechOneSchemaFrom_SCHEMA(name: string) {
+    return this._collection._rawFind(_mongoSchemaQueryFromNameQuery(name), { limit: 1 }).then(results => {
+      if (results.length === 1) {
+        return mongoSchemaToParseSchema(results[0]);
+      } else {
+        throw undefined;
+      }
+    });
+  }
+
+
 }
 
 MongoSchemaCollection._TESTmongoSchemaToParseSchema = mongoSchemaToParseSchema;
