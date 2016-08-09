@@ -53,12 +53,29 @@ export default class Browser extends DashboardView {
 
   }
 
+  componentWillMount() {
+    this.props.schema.dispatch(ActionTypes.FETCH);
+  }
+
 
   showCreateClass() {
     if (!this.props.schema.data.get('classes')) {
       return;
     }
     this.setState({showCreateClassDialog: true});
+  }
+
+  renderSidebar() {
+    let current = this.props.params.className || '';
+    let classes = this.props.schema.data.get('classes');
+    if (!classes) {
+      return null;
+    }
+
+    let special = [];
+    let categories = [];
+
+
   }
 
   renderContent() {

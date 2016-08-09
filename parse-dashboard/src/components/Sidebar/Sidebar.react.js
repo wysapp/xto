@@ -1,14 +1,18 @@
-
-import AppsManager from 'lib/AppsManager';
-import AppsSelector from 'components/Sidebar/AppsSelector.react';
-import FooterMenu from 'components/Sidebar/FooterMenu.react';
-
-import React from 'react';
-
-import SidebarHeader from 'components/Sidebar/SidebarHeader.react';
+/*
+ * Copyright (c) 2016-present, Parse, LLC
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ */
+import AppsManager    from 'lib/AppsManager';
+import AppsSelector   from 'components/Sidebar/AppsSelector.react';
+import FooterMenu     from 'components/Sidebar/FooterMenu.react';
+import React          from 'react';
+import SidebarHeader  from 'components/Sidebar/SidebarHeader.react';
 import SidebarSection from 'components/Sidebar/SidebarSection.react';
 import SidebarSubItem from 'components/Sidebar/SidebarSubItem.react';
-import styles from 'components/Sidebar/Sidebar.scss';
+import styles         from 'components/Sidebar/Sidebar.scss';
 
 const Sidebar = ({
   prefix,
@@ -20,16 +24,15 @@ const Sidebar = ({
   section,
   appSelector
 }) => {
+  
   const _subMenu = subsections => {
-    if(!subsections) {
+    if (!subsections) {
       return null;
     }
-
     return (
       <div className={styles.submenu}>
         {subsections.map(({name, link}) => {
           const active = subsection === name;
-
           return (
             <SidebarSubItem
               key={name}
@@ -39,15 +42,14 @@ const Sidebar = ({
               actionHandler={active ? actionHandler : null}
               active={active}>
               {active ? children : null}
-            </SidebarSubItem>              
+            </SidebarSubItem>
           );
         })}
       </div>
     );
   }
 
-
-  const apps = [].concat(AppsManager.apps()).sort((a,b) => (a.name < b.name ? -1: (a.name > b.name ? 1:0)));
+  const apps = [].concat(AppsManager.apps()).sort((a, b) => (a.name < b.name ? -1 : (a.name > b.name ? 1 : 0)));
 
   return <div className={styles.sidebar}>
     <SidebarHeader />
@@ -58,11 +60,11 @@ const Sidebar = ({
         icon,
         style,
         link,
-        subsections
-      }) => {
+        subsections,
+      }) => {        
         const active = name === section;
         return (
-          <SidebarSubItem
+          <SidebarSection
             key={name}
             name={name}
             icon={icon}
@@ -70,11 +72,10 @@ const Sidebar = ({
             link={prefix + link}
             active={active}>
             {active ? _subMenu(subsections) : null}
-          </SidebarSubItem>
+          </SidebarSection>
         );
       })}
     </div>
-
     <div className={styles.footer}>
       <a target='_blank' href='https://parseplatform.github.io'>Open Source</a>
       <a target='_blank' href='https://www.parse.com/docs'>Docs</a>

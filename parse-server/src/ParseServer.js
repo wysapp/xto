@@ -27,6 +27,7 @@ import { FeaturesRouter } from './Routers/FeaturesRouter';
 
 import { PushController } from './Controllers/PushController';
 
+import { SchemasRouter } from './Routers/SchemasRouter';
 import DatabaseController from './Controllers/DatabaseController';
 const SchemaController = require('./Controllers/SchemaController');
 import ParsePushAdapter from 'parse-server-push-adapter';
@@ -190,6 +191,7 @@ class ParseServer {
 
     let routers = [
       new ClassesRouter(),
+      new SchemasRouter(),
       new FeaturesRouter()
     ];
 

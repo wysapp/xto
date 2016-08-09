@@ -37,7 +37,6 @@ export default class PromiseRouter {
         }, Promise.resolve());
       }
     }
-
     this.routes.push({
       path: path,
       method: method,
