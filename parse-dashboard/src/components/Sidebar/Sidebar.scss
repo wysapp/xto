@@ -1,5 +1,10 @@
-
-
+/*
+ * Copyright (c) 2016-present, Parse, LLC
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ */
 @import 'stylesheets/globals.scss';
 
 .sidebar {
@@ -24,7 +29,7 @@
   transition: left 0.5s ease-in, opacity 0.5s 0.5s ease-in;
 }
 
-@media(max-width: 980px) {
+@media (max-width: 980px) {
   .sidebar {
     left: 0;
   }
@@ -32,13 +37,14 @@
   .toggle {
     left: 310px;
     top: 10px;
-    opacity: 1
+    opacity: 1;
   }
 
   body:global(.expanded) {
     .sidebar {
       left: -300px;
     }
+
     .toggle {
       left: 10px;
     }
@@ -81,7 +87,7 @@
     vertical-align: top;
 
     &:first-child {
-      padding-left:0;
+      padding-left: 0;
     }
     &:last-child {
       padding-right: 0;
@@ -93,7 +99,6 @@
     margin-top: -2px;
   }
 }
-
 
 .header {
   background: #05283c;
@@ -107,6 +112,150 @@
   }
 }
 
+.currentApp, .menuRow {
+  @include ellipsis();
+  display: block;
+  background: #094162;
+  height: 48px;
+  padding: 10px 14px;
+
+  color: white;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 30px;
+  cursor: pointer;
+}
+
+.menuRow {
+  border-bottom: 1px solid #0c5582;
+
+  > *:first-child {
+    display: inline-block;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  > *:not(:first-child) {
+    float: right;
+  }
+}
+
+.currentApp {
+  position: relative;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 40px;
+
+  &:hover{
+      &:after {
+        border-top-color: white;
+      }
+  }
+
+  &:after {
+    @include arrow('down', 10px, 7px, #132B39);
+    position: absolute;
+    content: '';
+    top: 20px;
+    right: 15px;
+  }
+}
+
+.appsMenu .currentApp:after {
+  @include arrow('up', 10px, 7px, #ffffff);
+  position: absolute;
+  content: '';
+  top: 20px;
+  right: 15px;
+}
+
+.appsMenu {
+  overflow: auto;
+  background: #094162;
+  width: 300px;
+
+  .menuRow:hover {
+    background: #0c5582;
+  }
+}
+
+.menuSection {
+  @include DosisFont;
+  height: 24px;
+  line-height: 24px;
+  background: #0c5582;
+  color: #84A5BC;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-size: 8px;
+  padding: 0 14px;
+  border-bottom: 1px solid #094162;
+}
+
+.createApp {
+  @include DosisFont;
+  display: block;
+  background: $blue;
+  color: white;
+  width: 91%;
+  height: 30px;
+  line-height: 30px;
+  border-radius: 5px;
+  text-align: center;
+  margin: 12px auto;
+  font-size: 12px;
+
+  &:hover {
+    background: #0c5582;
+  }
+}
+
+.section {
+  background: #0c5582;
+
+  :global(.icon) {
+    margin-right: 14px;
+  }
+}
+
+.active {
+  background: #159cee;
+
+  .section_header{
+    font-weight: 700;
+    &:hover{
+      background: #159cee;
+    }
+  }
+}
+
+.section_header {
+  display: block;
+  height: 48px;
+  font-size: 18px;
+  line-height: 28px;
+  padding: 12px 14px;
+  color: white;
+
+  &:hover{
+    background-color: #0D5E91;
+  }
+
+  > span {
+    vertical-align: top;
+  }
+
+  > svg {
+    margin-right: 14px;
+  }
+}
+
+.section_contents {
+  background: #0e69a0;
+  padding: 16px 14px 16px 50px;
+}
 
 .subitem {
   position: relative;
@@ -117,15 +266,32 @@
   color: white;
 }
 
-
 a.subitem {
   color: #8fb9cf;
   font-weight: 400;
   display: inline-block;
   width: 100%;
 
-  &:hover{
+  &:hover {
     color: white;
+  }
+}
+
+.action {
+  @include DosisFont;
+  position: absolute;
+  font-size: 12px;
+  font-weight: 400;
+  padding: 0 8px;
+  line-height: 20px;
+  top: 4px;
+  right: 0px;
+  background: #0c5987;
+  color: white;
+  border-radius: 3px;
+
+  &:hover {
+    background: #094162;
   }
 }
 
@@ -151,16 +317,15 @@ a.subitem {
     text-transform: uppercase;
   }
 
-  > *:first-child{
+  > *:first-child {
     top: 10px;
-    transition: all 0.4s 0.16s cubic-bezier(0.77, 0, 0.137, 1);
+    transition: all 0.4s 0.16s cubic-bezier(0.77, 0, 0.175, 1);
   }
 }
 
-
 .more {
   svg {
-    fill: #0c5582;
+    fill: #0C5582;
     transition: fill 0.2s ease-in;
   }
 
@@ -171,3 +336,48 @@ a.subitem {
   }
 }
 
+.popup {
+  position: absolute;
+  bottom: 4px;
+  left: -113px;
+  background: white;
+  width: 130px;
+  border-radius: 5px;
+
+  &:after {
+    @include arrow('down', 12px, 6px, #ffffff);
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    right: 11px;
+  }
+
+  a {
+    @include NotoSansFont;
+    display: block;
+    height: 30px;
+    line-height: 31px;
+    font-size: 13px;
+    text-align: right;
+    border-bottom: 1px solid #e0e0ea;
+    color: $mainTextColor;
+    padding-right: 8px;
+    &:hover{
+      background-color: darken(white,4%)
+    }
+
+    &:first-child {
+      border-radius: 5px 5px 0 0;
+    }
+
+    &:last-child {
+      border-bottom: 0;
+      border-radius: 0 0 5px 5px;
+    }
+
+    .emoji{
+      padding-left: 4px;
+      padding-right: 2px;
+    }
+  }
+}

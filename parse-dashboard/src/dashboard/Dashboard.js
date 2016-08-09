@@ -187,7 +187,6 @@ class Dashboard extends React.Component {
           <Route path='getting_started' component={Empty} />
           <Route path='browser' component={false ? SchemaOverview : Browser} />
 
-          // <Route path='migration' component={Migration} />
 
         </Route>
 

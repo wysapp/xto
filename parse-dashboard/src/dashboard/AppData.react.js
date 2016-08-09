@@ -1,6 +1,7 @@
 
 import React from 'react';
 
+import AppSelector from 'dashboard/AppSelector.react';
 import AppsManager from 'lib/AppsManager';
 import history from 'dashboard/history';
 import html from 'lib/htmlString';
@@ -26,7 +27,6 @@ let AppData = React.createClass({
   },
 
   render() {
-
 
     if (this.props.params.appId === '_') {
       return <AppSelector />;

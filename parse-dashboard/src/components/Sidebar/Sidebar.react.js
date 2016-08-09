@@ -1,6 +1,6 @@
 
 import AppsManager from 'lib/AppsManager';
-// import AppsSelector from 'components/Sidebar/AppsSelector.react';
+import AppsSelector from 'components/Sidebar/AppsSelector.react';
 import FooterMenu from 'components/Sidebar/FooterMenu.react';
 
 import React from 'react';

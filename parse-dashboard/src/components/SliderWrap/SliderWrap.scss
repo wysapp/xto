@@ -5,13 +5,12 @@
  * This source code is licensed under the license found in the LICENSE file in
  * the root directory of this source tree.
  */
-.content {
-  margin-left: 300px;
-  transition: margin-left 0.5s ease-in;
+.slider {
+  overflow: hidden;
+  transition: all 0.5s cubic-bezier(1, 0, 0, 1);
 }
 
-@media (max-width: 980px) {
-  .content {
-    margin-left: 0;
-  }
+.metrics {
+  width: 100%;
+  display: inline-block;
 }

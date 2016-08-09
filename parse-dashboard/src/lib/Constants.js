@@ -29,3 +29,15 @@ export const ChartColorSchemes = [
   '#15EDC8',
   '#B515ED'
 ];
+
+
+export const Directions = {
+  TOP_LEFT: 'TOP_LEFT',
+  UP: 'UP',
+  TOP_RIGHT: 'TOP_RIGHT',
+  RIGHT: 'RIGHT',
+  BOTTOM_RIGHT: 'BOTTOM_RIGHT',
+  DOWN: 'DOWN',
+  BOTTOM_LEFT: 'BOTTOM_LEFT',
+  LEFT: 'LEFT'
+};
