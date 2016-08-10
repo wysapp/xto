@@ -26,6 +26,7 @@ function SchemaStore(state, action) {
         {},
         {useMasterKey: true}
       ).then(({results}) => {
+
         let classes = {};
         let CLPs = {};
         if ( results ) {

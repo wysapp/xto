@@ -181,12 +181,15 @@ class ParseServer {
     if (process.env.TESTING == 1) {
       api.use('/', require('./testing-routes').router);
     }
-  
-
+    
     api.use(bodyParser.json({'type': '*/*', limit: maxUploadSize}));
+    
     api.use(middlewares.allowCrossDomain);
+
     api.use(middlewares.allowMethodOverride);
+
     api.use(middlewares.handleParseHeaders);
+
 
 
     let routers = [
