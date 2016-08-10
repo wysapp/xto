@@ -14,7 +14,7 @@ import {logger, configureLogger} from './logger';
 import AppCache from './cache';
 import Config from './Config';
 
-
+import { FilesController } from './Controllers/FilesController';
 import { FilesRouter } from './Routers/FilesRouter';
 
 import { GridStoreAdapter } from './Adapters/Files/GridStoreAdapter';
@@ -115,13 +115,13 @@ class ParseServer {
       configureLogger({level: 'silly', jsonLogs});
     }
 
-    const fileControllerAdapter = loadAdapter(filesAdapter, () => {
+    const filesControllerAdapter = loadAdapter(filesAdapter, () => {
       return new GridStoreAdapter(databaseURI);
-    });
+    })
 
     const pushControllerAdapter = loadAdapter(push && push.adapter, ParsePushAdapter, push || {});
 
-
+    const filesController = new FilesController(filesControllerAdapter, appId);
     const pushController = new PushController(pushControllerAdapter, appId, push);
     const databaseController = new DatabaseController(databaseAdapter);
 
@@ -147,9 +147,9 @@ class ParseServer {
       masterKey ,
       serverURL,
       javascriptKey,
-
+      filesController: filesController,
       pushController: pushController,
-
+      appName: appName,
       maxUploadSize,
       databaseController
     });
@@ -169,10 +169,7 @@ class ParseServer {
   static app({maxUploadSize = '20mb', appId}) {
     var api = express();
 
-    api.use(function(req,res,next){
-      console.log(req.method + ' : ' , req.originalUrl);
-      next();
-    })
+    
 
     api.use('/', middlewares.allowCrossDomain, new FilesRouter().getExpressRouter({maxUploadSize: maxUploadSize}));
 
@@ -187,6 +184,11 @@ class ParseServer {
     api.use(middlewares.allowCrossDomain);
 
     api.use(middlewares.allowMethodOverride);
+
+    api.use(function(req,res,next){
+      console.log(req.method + ' : ' , req.originalUrl);
+      next();
+    })
 
     api.use(middlewares.handleParseHeaders);
 

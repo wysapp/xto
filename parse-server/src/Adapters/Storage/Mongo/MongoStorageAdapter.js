@@ -136,6 +136,17 @@ export class MongoStorageAdapter {
   }
 
 
+  // Executes a find. Accepts: className, query in Parse format, and { skip, limit, sort }.
+  find(className, schema, query, { skip, limit, sort }) {
+    schema = convertParseSchemaToMongoSchema(schema);
+    let mongoWhere = transformWhere(className, query, schema);
+    let mongoSort = _.mapKeys(sort, (value, fieldName) => transformKey(className, fieldName, schema));
+    return this._adaptiveCollection(className)
+    .then(collection => collection.find(mongoWhere, { skip, limit, sort: mongoSort }))
+    .then(objects => objects.map(object => mongoObjectToParseObject(className, object, schema)))
+  }
+
+
   ensureUniqueness(className, schema, fieldNames) {
     schema = convertParseSchemaToMongoSchema(schema);
     let indexCreateionRequest = {};

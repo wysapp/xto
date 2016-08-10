@@ -10,6 +10,7 @@ const ALLOWED_GET_QUERY_KEYS = ['keys', 'include'];
 export class ClassesRouter extends PromiseRouter {
 
   handleFind(req) {
+    
     let body = Object.assign(req.body, ClassesRouter.JSONFromQuery(req.query));
     let options = {};
     let allowConstraints = ['skip', 'limit', 'order', 'count', 'keys', 'include', 'redirectClassNameForKey', 'where'];

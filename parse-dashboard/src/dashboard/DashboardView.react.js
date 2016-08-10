@@ -15,9 +15,11 @@ export default class DashboardView extends React.Component {
 
   /* A DashboardView renders two pieces: the sidebar, and the app itself */
   render() {
+
     let sidebarChildren = null;
     if (typeof this.renderSidebar === 'function') {
       sidebarChildren = this.renderSidebar();
+      
     }
     let appSlug = (this.context.currentApp ? this.context.currentApp.slug : '');
 

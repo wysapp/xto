@@ -291,6 +291,7 @@ DatabaseController.prototype.find = function(className, query, {
           } else {
             return this.adapter.find(className, schema, query, { skip, limit, sort })
             .then(objects => objects.map(object => {
+
               object = untransformObjectACL(object);
               return filterSensitiveData(isMaster, aclGroup, className, object)
             }));

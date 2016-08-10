@@ -323,6 +323,7 @@ const load = dbAdapter => {
 export {
   load,
   classNameIsValid,
+  fieldNameIsValid,
   systemClasses,
   defaultColumns,
   convertSchemaToAdapterSchema

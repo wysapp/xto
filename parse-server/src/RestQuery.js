@@ -391,6 +391,7 @@ RestQuery.prototype.runFind = function() {
   }
   return this.config.database.find(
     this.className, this.restWhere, this.findOptions).then((results) => {
+
     if (this.className === '_User') {
       for (var result of results) {
         delete result.password;

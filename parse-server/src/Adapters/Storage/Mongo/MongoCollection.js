@@ -8,6 +8,26 @@ export default class MongoCollection {
     this._mongoCollection = mongoCollection;
   }
 
+
+  find(query, {skip, limit, sort} = {} ) {
+    return this._rawFind(query, {skip, limit, sort})
+      .catch(error => {
+        if ( error.code != 17007 && !error.message.match(/unable to find index for .geoNear/)) {
+          throw error;
+        }
+
+        let key = error.message.match(/field=([A-Za-z_0-9]+) /)[1];
+        if (!key) {
+          throw error;
+        }
+
+        var index = {};
+        index[key] = '2d';
+        return this._mongoCollection.createIndex(index)
+          .then(() => this._rawFind(query, {skip, limit, sort}));
+      });
+  }
+
   _rawFind(query, { skip, limit, sort } = {}) {
    
     return this._mongoCollection
