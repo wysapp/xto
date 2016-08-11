@@ -11,7 +11,6 @@ const noop = () => {};
 let Button = (props) => {
   const hasOnClick = props.onClick && !props.disabled;
   let classes = [styles.button, unselectable];
-
   if (props.disabled) {
     classes.push(styles.disabled);
     if(props.color === 'white') {

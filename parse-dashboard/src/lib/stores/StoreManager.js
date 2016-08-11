@@ -46,6 +46,7 @@ export function getStore(name) {
     dispatch(type, params, app) {
       let action = {...params, type, app};
       let newState = storeData.store(stateGetter(name, app), action);
+
       if (newState instanceof Parse.Promise) {
         return newState.then((result) => {
 

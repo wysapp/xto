@@ -11,6 +11,7 @@ import { SpecialClasses } from 'lib/Constants';
 export default class DataBrowser extends React.Component {
   constructor(props, context) {
     super(props, context);
+
     let order = ColumnPreferences.getOrder(
       props.columns,
       context.currentApp.applicationId,
@@ -57,6 +58,36 @@ export default class DataBrowser extends React.Component {
 
   componentWillUnmount() {
     document.body.removeEventListener('keydown', this.handleKey);
+  }
+
+  updatePreferences(order) {
+    if (this.saveOrderTimeout) {
+      clearTimeout(this.saveOrderTimeout);
+    }
+
+    let appId = this.context.currentApp.applicationId;
+    let className = this.props.className;
+    this.saveOrderTimeout = setTimeout(() => {
+      ColumnPreferences.updatePreferences(order, appId, className);
+    }, 1000);
+  }
+
+
+  handleResize(index, delta) {
+    this.setState(({roder}) => {
+      order[index].width = Math.max(60, order[index].width + delta);
+      this.updatePreferences(order);
+      return {order};
+    });
+  }
+
+  handleHeaderDragDrop(dragIndex, hoverIndex) {
+    let newOrder = this.state.order;
+    let movedIndex = newOrder.splice(dragIndex, 1);
+    newOrder.splice(hoverIndex, 0, movedIndex[0]);
+    this.setState({ order: newOrder }, () => {
+      this.updatePreferences(newOrder);
+    });
   }
 
   handleKey(e) {
@@ -108,6 +139,19 @@ export default class DataBrowser extends React.Component {
     }
   }
 
+
+  setEditing(editing) {
+    if(this.state.editing !== editing) {
+      this.setState({ editing: editing });
+    }
+  }
+
+  setCurrent(current) {
+    if (this.state.current !== current ) {
+      this.setState({ current: current });
+    }
+  }
+
   render(){
     let { className, ...other} = this.props;
 
@@ -131,7 +175,7 @@ export default class DataBrowser extends React.Component {
           enableDeleteAllRows={this.context.currentApp.serverInfo.features.schemas.clearAllDataFromClass}
           enableExportClass={this.context.currentApp.serverInfo.features.schemas.exportClass}
           enableSecurityDialog={this.context.currentApp.serverInfo.features.schemas.editClassLevelPermissions}
-          {...other} />
+          {...other}/>
       </div>
     );
   }
