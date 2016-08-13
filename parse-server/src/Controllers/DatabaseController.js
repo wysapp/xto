@@ -10,6 +10,8 @@ var SchemaController = require('./SchemaController');
 const deepcopy = require('deepcopy');
 
 
+const specialQuerykeys = ['$and', '$or', '_rperm', '_wperm', '_perishable_token', '_email_verify_token'];
+
 const validateQuery = query => {
   if (query.ACL) {
     throw new Parse.Error(Parse.Error.INVALID_QUERY, 'Cannot query on ACL.');

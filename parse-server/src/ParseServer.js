@@ -16,6 +16,7 @@ import Config from './Config';
 
 import { FilesController } from './Controllers/FilesController';
 import { FilesRouter } from './Routers/FilesRouter';
+import { GlobalConfigRouter } from './Routers/GlobalConfigRouter';
 
 import { GridStoreAdapter } from './Adapters/Files/GridStoreAdapter';
 import { loadAdapter } from './Adapters/AdapterLoader';
@@ -197,7 +198,8 @@ class ParseServer {
     let routers = [
       new ClassesRouter(),
       new SchemasRouter(),
-      new FeaturesRouter()
+      new FeaturesRouter(),
+      new GlobalConfigRouter()
     ];
 
     if (process.env.PARSE_EXPERIMENTAL_HOOKS_ENABLED || process.env.TESTING) {

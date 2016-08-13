@@ -69,13 +69,20 @@ export default class ParseApp {
   }
 
   setParseKeys() {
-    Parse.serverURL = this.serverURL;
-    Parse._initialize(this.applicationId, this.javascriptKey, this.masterKey);
+    Parse.serverURL = this.serverURL;   
+    Parse._initialize(this.applicationId, this.javascriptKey, this.masterKey);    
   }
 
   apiRequest(method, path, params, options) {
     this.setParseKeys();
     return Parse._request(method, path, params, options);
+  }
+
+
+  getLogs(level, since) {
+    let path = 'scriptlog?level=' + encodeURIComponent(level.toLowerCase()) + '&n=100' + (since?'&startDate=' + encodeURIComponent(since.getTime()): '');
+
+    return this.apiRequest('GET', path, {}, { useMasterKey: true });
   }
 
 

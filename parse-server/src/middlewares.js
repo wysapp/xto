@@ -265,6 +265,7 @@ function enforceMasterKeyAccess(req, res, next) {
 }
 
 function promiseEnforceMasterKeyAccess(request) {
+
   if (!request.auth.isMaster) {
     let error = new Error();
     error.status = 403;

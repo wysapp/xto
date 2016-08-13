@@ -5,11 +5,15 @@ import AppsIndex from './Apps/AppsIndex.react';
 
 import AppsManager from 'lib/AppsManager';
 import Browser from './Data/Browser/Browser.react';
+
+import Config from './Data/Config/Config.react';
+
 import FourOhFour from 'components/FourOhFour/FourOhFour.react';
 
 import history from 'dashboard/history';
 
 import Loader from 'components/Loader/Loader.react';
+import Logs from './Data/Logs/Logs.react';
 
 import Migration from './Data/Migration/Migration.react';
 
@@ -188,6 +192,11 @@ class Dashboard extends React.Component {
           <Route path='browser' component={false ? SchemaOverview : Browser} />
 
           <Route path='browser/:className' component={Browser} />
+
+          <Redirect from='logs' to='/apps/:appId/logs/info' />
+          <Route path='logs/:type' component={Logs} />
+
+          <Route path='Config' component={Config} />
 
 
         </Route>
