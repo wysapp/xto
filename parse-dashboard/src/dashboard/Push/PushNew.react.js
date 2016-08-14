@@ -5,6 +5,8 @@ import DashboardView from 'dashboard/DashboardView.react';
 import React from 'react';
 import SliderWrap from 'components/SliderWrap/SliderWrap.react';
 
+import FlowView from 'components/FlowView/FlowView.react';
+
 import subscribeTo from 'lib/subscribeTo';
 import TextInput from 'components/TextInput/TextInput.react';
 import Toggle from 'components/Toggle/Toggle.react';
@@ -44,5 +46,11 @@ export default class PushNew extends DashboardView {
       localeDeviceCountMap: {},
       loadingLocale: true,
     }
+  }
+
+
+  renderContent() {
+
+    return <FlowView />
   }
 }
