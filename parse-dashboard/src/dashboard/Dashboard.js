@@ -1,5 +1,8 @@
 
 import AccountView from './AccountView.react';
+
+import ApiConsole from './Data/ApiConsole/ApiConsole.react';
+
 import AppData from './AppData.react';
 import AppsIndex from './Apps/AppsIndex.react';
 
@@ -19,6 +22,8 @@ import Migration from './Data/Migration/Migration.react';
 
 import Parse from 'parse';
 import ParseApp from 'lib/ParseApp';
+
+import PushNew from './Push/PushNew.react';
 import React from 'react';
 
 
@@ -197,6 +202,12 @@ class Dashboard extends React.Component {
           <Route path='logs/:type' component={Logs} />
 
           <Route path='Config' component={Config} />
+          <Route path='api_console' component={ApiConsole} />
+
+          <Redirect from='push' to='/apps/:appId/push/new' />
+          <Route path='push/new' component={PushNew} />
+
+          
 
 
         </Route>

@@ -163,8 +163,8 @@ export default class DashboardView extends React.Component {
     let settingsSections = [];
 
     // Settings - nothing remotely like this in parse-server yet. Maybe it will arrive soon.
-    /*
-    if (features.generalSettings) {
+    
+    /*if (features.generalSettings) {
       settingsSections.push({
         name: 'General',
         link: '/settings/general'
@@ -197,8 +197,8 @@ export default class DashboardView extends React.Component {
         name: 'Hosting and Emails',
         link: '/settings/hosting'
       });
-    }*/
-
+    }
+*/
     let appSidebarSections = []
 
     if (coreSubsections.length > 0) {

@@ -14,6 +14,8 @@ import {logger, configureLogger} from './logger';
 import AppCache from './cache';
 import Config from './Config';
 
+import { FileLoggerAdapter } from './Adapters/Logger/FileLoggerAdapter';
+
 import { FilesController } from './Controllers/FilesController';
 import { FilesRouter } from './Routers/FilesRouter';
 import { GlobalConfigRouter } from './Routers/GlobalConfigRouter';
@@ -25,6 +27,9 @@ import PromiseRouter from './PromiseRouter';
 import requiredParameter from './requiredParameter';
 import { ClassesRouter } from './Routers/ClassesRouter';
 import { FeaturesRouter } from './Routers/FeaturesRouter';
+
+import { LoggerController } from './Controllers/LoggerController';
+import { LogsRouter } from './Routers/LogsRouter';
 
 import { PushController } from './Controllers/PushController';
 
@@ -121,9 +126,11 @@ class ParseServer {
     })
 
     const pushControllerAdapter = loadAdapter(push && push.adapter, ParsePushAdapter, push || {});
+    const loggerControllerAdapter = loadAdapter(loggerAdapter, FileLoggerAdapter);
 
     const filesController = new FilesController(filesControllerAdapter, appId);
     const pushController = new PushController(pushControllerAdapter, appId, push);
+    const loggerController = new LoggerController(loggerControllerAdapter, appId);
     const databaseController = new DatabaseController(databaseAdapter);
 
     let userClassPromise = databaseController.loadSchema()
@@ -150,6 +157,7 @@ class ParseServer {
       javascriptKey,
       filesController: filesController,
       pushController: pushController,
+      loggerController: loggerController,
       appName: appName,
       maxUploadSize,
       databaseController
@@ -198,6 +206,7 @@ class ParseServer {
     let routers = [
       new ClassesRouter(),
       new SchemasRouter(),
+      new LogsRouter(),
       new FeaturesRouter(),
       new GlobalConfigRouter()
     ];

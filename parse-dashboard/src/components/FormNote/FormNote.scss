@@ -7,21 +7,23 @@
  */
 @import 'stylesheets/globals.scss';
 
-.logs {
-  position: relative;
-  min-height: 100vh;
+.note {
+  color: white;
+  font-size: 12px;
+  text-align: center;
+  line-height: 30px;
+  min-height: 30px;
 }
 
-.content {
-  padding: 106px 10px 10px 10px;
-  background: $logViewBackgroundColor;
-  min-height: 100vh;
+.blue {
+  background: $blue;
 }
-
-.empty {
-  position: absolute;
-  top: 96px;
-  left: 0;
-  right: 0;
-  bottom: 0;
+.green {
+  background: $green;
+}
+.orange {
+  background: $orange;
+}
+.red {
+  background: $red;
 }

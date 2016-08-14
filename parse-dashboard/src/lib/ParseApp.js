@@ -85,6 +85,55 @@ export default class ParseApp {
     return this.apiRequest('GET', path, {}, { useMasterKey: true });
   }
 
+  getLatestRelease() {
+    if ( new Date() - this.latestRelease.lastFetched < 60000) {
+      return Parse.Promise.as(this.latestRelease);
+    }
+
+    return this.apiRequest(
+      'GET',
+      'releases/latest',
+      {},
+      { useMasterKey: true }
+    ).then((release) => {
+      this.latestRelease.lastFetched = new Date();
+      this.latestRelease.files = null;
+
+      if ( release.length === 0) {
+        this.latestRelease.release = null;
+      } else {
+        let latestRelease = release[0];
+
+        this.latestRelease.release = {
+          version: latestRelease.version,
+          parseVersion: latestRelease.parseVersion,
+          deployedAt: new Date(latestRelease.timestamp)
+        };
+
+        let chekcsums = JSON.parse(latestRelease.checksums);
+        let versions = JSON.parse(latestRelease.userFiles);
+        this.latestRelease.files = {};
+
+        if ( checksums.cloud) {
+          checksums = checksums.cloud;
+        }
+        if (versions.cloud) {
+          versions = versions.cloud;
+        }
+
+        for (let c in checksums) {
+          this.latestRelease.files[c] = {
+            checksum: checksums[c],
+            version: versions[c],
+            source: null
+          };
+        }
+      }
+
+      return Parse.Promise.as(this.latestRelease);
+    });
+  }
+
 
   getClassCount(className) {
     this.setParseKeys();
