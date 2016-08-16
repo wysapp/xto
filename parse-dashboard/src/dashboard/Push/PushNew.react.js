@@ -1,5 +1,6 @@
 
-
+import * as PushAudiencesStore from 'lib/stores/PushAudiencesStore';
+import * as PushConstants from './PushConstants';
 import * as SchemaStore from 'lib/stores/SchemaStore';
 
 import Button from 'components/Button/Button.react';
@@ -97,7 +98,44 @@ export default class PushNew extends DashboardView {
   }
 
   componentWillMount() {
+    
     this.props.schema.dispatch(SchemaStore.ActionTypes.FETCH);
+    let options = { xhrKey: XHR_KEY};
+    if ( this.props.location.query.audienceId) {
+      options.limit = PushConstants.SHOW_MORE_LIMIT;
+      options.min = PushConstants.INITIAL_PAGE_SIZE;
+      this.setState({ initialAudienceId: this.props.location.query.audienceId});
+    }
+
+    this.props.pushaudiences.dispatch(PushAudiencesStore.ActionTypes.FETCH, options).then(() => {
+      this.setState({ pushAudiencesFetched: true });
+    });
+
+    let { xhr, promise } = this.context.currentApp.isLocalizationAvailable();
+    this.xhrs.push(xhr);
+
+    promise.then(({ available }) => {
+      if (available ) {
+        this.setState({ isLocalizationAvailable: true});
+        let { xhr, promise } = this.context.currentApp.fetchPushLocales();
+        this.xhrs.push(xhr);
+        promise.then(({ options }) => {
+          let filteredLocales = options.filter((locale) => {
+            if ( locale === '' || locale === undefined) {
+              return false;
+            }
+            return true;
+          });
+
+          this.setState({
+            locales: filteredLocales,
+            availableLocales: filteredLocales
+          });
+        }).always(() => {
+          this.setState({ loadingLocale: false });
+        });
+      }
+    });
   }
 
 

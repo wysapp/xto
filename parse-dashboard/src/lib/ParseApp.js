@@ -152,6 +152,36 @@ export default class ParseApp {
     return p;
   }
 
+
+  isLocalizationAvailable() {
+    let path = '/apps/' + this.slug + '/is_localization_available';
+    return AJAX.abortableGet(path);
+  }
+
+
+  fetchPushLocales() {
+    let path = '/apps/' + this.slug + '/installation_column_options?column=localeIdentifier';
+    return AJAX.abortableGet(path);
+  }
+
+
+  fetchPushLocaleDeviceCount(audienceId, where, locales ) {
+    let path = '/apps/' + this.slug + '/push_subscriber_translation_count';
+    let urlsSeparator = '?';
+    path += `?where=${encodeURI(JSON.stringify(where || {}))}`;
+    path += `&locales=${encodeURI(JSON.stringify(locales))}`;
+
+    urlsSeparator = '&';
+    return AJAX.abortableGet(audienceId ? `${path}${urlsSeparator}audienceId=${audienceId}` : path);
+  }
+
+  
+  fetchAvailableDevices() {
+    let path = '/apps/' + this.slug + '/dashboard_ajax/available_devices';
+    return AJAX.get(path);
+  }
+
+
   getMigrations() {
     let path = '/apps/' + this.slug + '/migrations';
     let obj = AJAX.abortableGet(path);

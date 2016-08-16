@@ -47,7 +47,7 @@ export function getStore(name) {
       let action = {...params, type, app};
       let newState = storeData.store(stateGetter(name, app), action);
 
-      if (newState instanceof Parse.Promise) {
+      if (newState instanceof Parse.Promise) {        
         return newState.then((result) => {
 
           if (storeData.isGlobal) {
