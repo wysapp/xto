@@ -153,6 +153,18 @@ export default class ParseApp {
   }
 
 
+  fetchPushSubscriberCount(audienceId, query) {
+    let path = '/apps/' + this.slug + '/dashboard_ajax/push_subscriber_count';
+    let urlsSeparator = '?';
+    if ( query) {
+      path += `?where=${encodeURI(JSON.stringify(query))}`;
+      urlsSeparator = '&';
+    }
+
+    return AJAX.abortableGet(audienceId ? `${path}${urlsSeparator}audienceId=${audienceId}` : path );
+  }
+
+
   isLocalizationAvailable() {
     let path = '/apps/' + this.slug + '/is_localization_available';
     return AJAX.abortableGet(path);

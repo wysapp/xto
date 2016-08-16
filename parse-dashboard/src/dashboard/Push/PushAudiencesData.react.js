@@ -8,7 +8,7 @@ import LoaderContainer from 'components/LoaderContainer/LoaderContainer.react';
 import ParseApp from 'lib/ParseApp';
 import PropTypes from 'lib/PropTypes';
 import PushAudienceDialog from 'components/PushAudienceDialog/PushAudienceDialog.react';
-import PushAudiencesSeletor from 'components/PushAudiencesSelector/PushAudiencesSelector.react';
+import PushAudiencesSelector from 'components/PushAudiencesSelector/PushAudiencesSelector.react';
 import React from 'react';
 import styles from './PushAudiencesData.scss';
 
@@ -61,6 +61,14 @@ export default class PushAudiencesData extends React.Component {
       this.setState({
         availableDevices: PushConstants.DEFAULT_DEVICES
       });
+    });
+  }
+
+
+  handleEditAudienceClick(audienceInfo) {
+    this.setState({
+      showEditModal: true,
+      newSegmentInfo: audienceInfo
     });
   }
 
