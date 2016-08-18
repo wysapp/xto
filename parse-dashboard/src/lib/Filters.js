@@ -128,10 +128,10 @@ export function availableFilters(schema, currentFilters, blacklist) {
       continue;
     }
     let type = schema[col].type;
-    if (FieldConstraints[type]) {
+    if (!FieldConstraints[type]) {
       continue;
     }
-    available[col] = FieldConstraints[type].filter((e) => blacklist.indexOf(c) < 0);
+    available[col] = FieldConstraints[type].filter((c) => blacklist.indexOf(c) < 0);
   }
 
   return available;

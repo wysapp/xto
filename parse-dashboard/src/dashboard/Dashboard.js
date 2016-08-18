@@ -197,6 +197,7 @@ class Dashboard extends React.Component {
           <Route path='browser' component={false ? SchemaOverview : Browser} />
 
           <Route path='browser/:className' component={Browser} />
+          <Route path='browser/:className/:entityId/:relationName' component={Browser} />
 
           <Redirect from='logs' to='/apps/:appId/logs/info' />
           <Route path='logs/:type' component={Logs} />

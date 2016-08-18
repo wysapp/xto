@@ -140,6 +140,40 @@ export default class PushNew extends DashboardView {
   }
 
 
+  handlePushSubmit(changes) {
+    let promise = new Promise();
+    let payload = changes.data_type === 'json' ? JSON.parse(changes.data) : {alert: changes.data};
+
+    if (!!changes.increment_badge) {
+      payload.badge = 'Increment';
+    }
+
+
+
+    Parse.Push.send({
+      where: changes.target || new Parse.Query(Parse.Installation),
+      data: payload,
+    }, {
+      useMasterKey: true,
+    }).then(({error}) => {
+      if ( error ) {
+        promise.reject({error});
+      } else {
+        const PARSE_SERVER_SUPPORTS_PUSH_INDEX = false;
+        if ( PARSE_SERVER_SUPPORTS_PUSH_INDEX) {
+          history.push(this.context.generatePath('push/activity'));
+        } else {
+          promise.resolve();
+        }
+      }
+    }, (error) => {
+      promise.reject(error);
+    });
+
+    return promise;
+  }
+
+
   
   renderMessageContent(fields, setField) {
     let monospace = fields.data_type === 'json';

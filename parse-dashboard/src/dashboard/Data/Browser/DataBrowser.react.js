@@ -94,10 +94,9 @@ export default class DataBrowser extends React.Component {
     if (this.props.disableKeyControls) {
       return;
     }
-
     if (this.state.editing) {
-      switch(e.keyCode) {
-        case 27: //ESC
+      switch (e.keyCode) {
+        case 27: // ESC
           this.setState({
             editing: false
           });
@@ -107,18 +106,16 @@ export default class DataBrowser extends React.Component {
           return;
       }
     }
-
     if (!this.state.current) {
       return;
     }
-
-    switch(e.keyCode) {
+    switch (e.keyCode) {
       case 8:
       case 46:
-        //Backspace or Delete
+        // Backspace or Delete
         let colName = this.state.order[this.state.current.col].name;
         let col = this.props.columns[colName];
-        if ( col.type !== 'Relation') {
+        if (col.type !== 'Relation') {
           this.props.updateRow(
             this.state.current.row,
             colName,
@@ -131,7 +128,34 @@ export default class DataBrowser extends React.Component {
         this.setState({
           current: {
             row: this.state.current.row,
-            col: Math.max(this.state.current.col -1, 0)
+            col: Math.max(this.state.current.col - 1, 0)
+          }
+        });
+        e.preventDefault();
+        break;
+      case 38: // Up
+        this.setState({
+          current: {
+            row: Math.max(this.state.current.row - 1, 0),
+            col: this.state.current.col
+          }
+        });
+        e.preventDefault();
+        break;
+      case 39: // Right
+        this.setState({
+          current: {
+            row: this.state.current.row,
+            col: Math.min(this.state.current.col + 1, this.state.order.length - 1)
+          }
+        });
+        e.preventDefault();
+        break;
+      case 40: // Down
+        this.setState({
+          current: {
+            row: Math.min(this.state.current.row + 1, this.props.data.length - 1),
+            col: this.state.current.col
           }
         });
         e.preventDefault();

@@ -37,11 +37,15 @@ export default class BrowserFilter extends React.Component {
 
   open() {
     let filters = this.props.filters;
+    
     if (this.props.filters.size === 0) {
+      
       let available = Filters.availableFilters(this.props.schema, null, BLACKLISTED_FILTERS);
+
       let field = Object.keys(available)[0];
       filters = new List([new Map({ field: field, constraint: available[field][0] })]);
     }
+
     this.setState({
       open: true,
       filters: filters,

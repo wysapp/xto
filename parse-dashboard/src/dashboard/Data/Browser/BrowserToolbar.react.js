@@ -53,7 +53,9 @@ let BrowserToolbar = ({
   }
 
   if (!relation) {
+
     if (perms && !hidePerms) {
+      
       let read = perms.get && perms.find && perms.get['*'] && perms.find['*'];
       let write = perms.create && perms.update && perms.delete && perms.create['*'] && perms.update['*'] && perms.delete['*'];
 

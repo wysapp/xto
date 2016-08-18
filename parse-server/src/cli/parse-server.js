@@ -42,6 +42,7 @@ if (!options.serverURL) {
 }
 
 
+
 if ( !options.appId || !options.masterKey || !options.serverURL) {
   program.outputHelp();
   console.error("");

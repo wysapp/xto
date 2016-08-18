@@ -67,6 +67,7 @@ export default class Browser extends DashboardView {
 
     this.addRow = this.addRow.bind(this);
     this.showCreateClass = this.showCreateClass.bind(this);
+    this.refresh = this.refresh.bind(this);
     this.createClass = this.createClass.bind(this);
 
 
@@ -201,6 +202,29 @@ export default class Browser extends DashboardView {
     this.setState({clp: this.props.schema.data.get('CLPs').toJS()});
   }
 
+
+  async refresh() {
+    const relation = this.state.relation;
+    const prevFilters = this.state.filters || new List();
+    const initialState =  {
+      data: null,
+      newObject: null,
+      lastMax: -1,
+      selection: {},
+    };
+
+    if (relation) {
+      await this.setState(initialState);
+      await this.setRelation(relation, prevFilters);
+    } else {
+      await this.setState({
+        ...initialState,
+        relation: null,
+      });
+      await this.fetchData(this.props.params.className, prevFilters);
+    }
+  }
+
   async fetchParseData(source, filters) {
     const query = queryFromFilters(source, filters);
     if (this.state.ordering[0] === '-') {
@@ -219,6 +243,20 @@ export default class Browser extends DashboardView {
   async fetchData(source, filters = new List(), last) {
     const data = await this.fetchParseData(source, filters);
     this.setState({ data: data, filters, lastMax: 200});
+  }
+
+
+  updateFilters(filters) {
+    const relation = this.state.relation;
+    if ( relation ) {
+      this.setRelation(relation, filters);
+    } else {
+      const source = this.props.params.className;
+      const _filters = JSON.stringify(filters.toJSON());
+      const url = `browser/${source}${(filters.size === 0 ? '' : `?filters=${(encodeURIComponent(_filters))}`)}`;
+
+      history.push(this.context.generatePath(url));
+    }
   }
 
 

@@ -32,6 +32,7 @@ import { LoggerController } from './Controllers/LoggerController';
 import { LogsRouter } from './Routers/LogsRouter';
 
 import { PushController } from './Controllers/PushController';
+import { PushRouter } from './Routers/PushRouter';
 
 import { SchemasRouter } from './Routers/SchemasRouter';
 import DatabaseController from './Controllers/DatabaseController';
@@ -206,6 +207,7 @@ class ParseServer {
     let routers = [
       new ClassesRouter(),
       new SchemasRouter(),
+      new PushRouter(),
       new LogsRouter(),
       new FeaturesRouter(),
       new GlobalConfigRouter()
