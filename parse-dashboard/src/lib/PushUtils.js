@@ -34,6 +34,13 @@ export function formatConstraint(key, constraints, schema ) {
 }
 
 
+let devicesToReadableList = (devices) => {
+  return devices.map((device) => {
+    return PushConstants.DEVICE_MAP[device];
+  })
+}
+
+
 
 /**
  * build short for query information

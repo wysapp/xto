@@ -23,6 +23,7 @@ import pluralize from 'lib/pluralize';
 
 import PushAudiencesData from './PushAudiencesData.react';
 import PushPreview from 'components/PushPreview/PushPreview.react';
+import queryFromFilters from 'lib/queryFromFilters';
 
 
 import React from 'react';
@@ -367,6 +368,7 @@ export default class PushNew extends DashboardView {
         pushAudiencesStore={this.props.pushaudiences}
         current={fields.audience_id}
         onChange={(audienceId, queryOrFilters, deviceCount) => {
+          
           this.setState({ deviceCount });
           setField('audience_id', audienceId);
           if (audienceId === PushConstants.NEW_SEGMENT_ID) {

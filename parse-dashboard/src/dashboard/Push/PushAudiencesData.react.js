@@ -9,6 +9,7 @@ import ParseApp from 'lib/ParseApp';
 import PropTypes from 'lib/PropTypes';
 import PushAudienceDialog from 'components/PushAudienceDialog/PushAudienceDialog.react';
 import PushAudiencesSelector from 'components/PushAudiencesSelector/PushAudiencesSelector.react';
+import queryFromFilters from 'lib/queryFromFilters';
 import React from 'react';
 import styles from './PushAudiencesData.scss';
 
@@ -54,6 +55,7 @@ export default class PushAudiencesData extends React.Component {
     });
 
     this.context.currentApp.fetchAvailableDevices().then(({ available_devices }) => {
+      
       this.setState({
         availableDevices: available_devices
       });
@@ -73,6 +75,61 @@ export default class PushAudiencesData extends React.Component {
   }
 
   createAudience(modalState, { platforms, name, formattedFilters, saveForFuture, filters}) {
+    
+    this.setState({
+      createProgress: true,
+      createErrorMessage: '',
+    });
+
+
+    let query = {};
+    let parseQuery = queryFromFilters('_Installation', formattedFilters);
+
+    if (parseQuery && parseQuery.toJSON()) {
+      query = parseQuery.toJSON().where || {};
+    }
+
+    query.deviceType = {$in: platforms};
+
+    parseQuery.containedIn('deviceType', platforms);
+    
+    this.props.onChange(saveForFuture ? (() => {throw "Audiences not supported"})() : PushConstants.NEW_SEGMENT_ID, parseQuery, 1);
+
+    if ( saveForFuture) {
+      this.props.pushAudiencesStore.dispatch(PushAudiencesStore.ActionTypes.CREATE, {
+        query: JSON.stringify(query),
+        name,
+      }).then(() => {
+        let stateSettings = {};
+        stateSettings[modalState] = false;
+        stateSettings.newlyCreatedSegment = true;
+        stateSettings.createProgress = false;
+        this.setState(stateSettings);
+      }, (e) => {
+        this.setState({
+          createErrorMessage: e.message,
+          createProgress: false,
+        });
+      });
+    } else {
+      let stateSettings = {
+        newSegment: {
+          createdAt: new Date(),
+          name: 'New Segment',
+          count: 0,
+          objectId: PushConstants.NEW_SEGMENT_ID,
+          query,
+          filters,
+        }
+      };
+
+      stateSettings[modalState] = false;
+      stateSettings.createProgress = false;
+      this.setState(stateSettings);
+      this.newlyCreatedTempSegment = true;
+    }
+
+    
 
   }
 
@@ -152,6 +209,7 @@ export default class PushAudiencesData extends React.Component {
     } else {
       _current = current;
     }
+
 
     return (
       <div className={styles.pushAudienceData}>

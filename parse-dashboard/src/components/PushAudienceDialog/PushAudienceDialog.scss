@@ -2,3 +2,40 @@
 
 @import 'stylesheets/globals.scss';
 
+.addConditions {
+  text-align: center;
+  padding: 25px 20px;
+  border-style: solid;
+  border-color: $borderGrey;
+  border-width: 1px 1px 0 1px;
+
+  &.nonEmptyConditions {
+    padding: 4px;
+    a {
+      border: none;
+    }
+  }
+}
+
+.footer {
+  padding: 17px 28px;
+  text-align: right;
+
+  &:nth-child(2) {
+    text-align: center;
+  }
+
+  > * {
+    margin: 0 12px 0 0;
+
+    &:last-child {
+      margin-right: 0;
+    }
+  }
+}
+
+
+.filter {
+  max-height: 50vh;
+  overflow-y: scroll;
+}

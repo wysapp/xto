@@ -77,6 +77,8 @@ export default class MultiSelect extends React.Component {
 
     let content = [];
     let classes = [ styles.current ];
+
+    
     React.Children.forEach(this.props.children, c => {
       if(this.props.value.indexOf(c.props.value) > -1) {
         content.push(c.props.children);
@@ -84,7 +86,7 @@ export default class MultiSelect extends React.Component {
     });
     if ( content.length === 0 && this.props.placeHolder) {
       content.push(this.props.placeHolder);
-      classes.push(styles.placeHolder);
+      classes.push(styles.placeholder);
     }
 
     let dropdownStyle = {};

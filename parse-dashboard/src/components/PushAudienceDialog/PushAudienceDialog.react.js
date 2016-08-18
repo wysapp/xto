@@ -5,6 +5,7 @@ import * as PushConstants from 'dashboard/Push/PushConstants';
 
 import Button from 'components/Button/Button.react';
 import Field from 'components/Field/Field.react';
+import Filter from 'components/Filter/Filter.react';
 import FormNote from 'components/FormNote/FormNote.react';
 
 import Label from 'components/Label/Label.react';
@@ -13,6 +14,8 @@ import MultiSelect from 'components/MultiSelect/MultiSelect.react';
 import MultiSelectOption from 'components/MultiSelect/MultiSelectOption.react';
 import ParseApp from 'lib/ParseApp';
 import PropTypes from 'lib/PropTypes';
+
+import queryFromFilters from 'lib/queryFromFilters';
 
 import React from 'react';
 import TextInput from 'components/TextInput/TextInput.react';
@@ -64,11 +67,44 @@ export default class PushAudienceDialog extends React.Component {
 
   handleChange(newValue) {
 
+   
+    this.setState(
+      {platforms: newValue},
+      this.fetchAudienceSize.bind(this)
+    );
   }
 
 
   handleAddCondition() {
 
+  }
+
+  fetchAudienceSize() {
+    if (!this.context || !this.context.currentApp) {
+      return;
+    }
+
+    let query = {};
+    
+    let parseQuery = queryFromFilters('_Installation', this.state.filters);
+
+    if ( parseQuery && parseQuery.toJSON()) {
+      query = parseQuery.toJSON().where || {};
+    }
+
+    query.deviceType = {$in: this.state.platforms};
+    let { xhr, promise } = this.context.currentApp.fetchPushSubscriberCount(PushConstants.NEW_SEGMENT_ID, query);
+
+    if ( this.xhrHandle) {
+      this.xhrHandle.abort();
+    }
+    this.xhrHandle = xhr;
+    promise.then(({ approximate, count }) => {
+      this.setState({
+        approximate,
+        audienceSize: count,
+      });
+    });
   }
 
   valid() {
@@ -111,7 +147,7 @@ export default class PushAudienceDialog extends React.Component {
 
 
     let nonEmptyConditions = this.state.filters.size !== 0 ? true : false;
-
+    
     let customFooter = (
       <div className={styles.footer}>
         {AUDIENCE_SIZE_FETCHING_ENABLED ? <div
@@ -142,6 +178,36 @@ export default class PushAudienceDialog extends React.Component {
 
     let futureUseSegment = [];
 
+    if (!this.props.disableNewSegment) {
+      if (PARSE_SERVER_SUPPORTS_SAVED_AUDIENCES) {
+        futureUseSegment.push(
+          <FIeld 
+            key={'saveForFuture'}
+            label={<Label text='Save this audience for future use?' />}
+            input={<Toggle value={this.state.saveForFuture} type={Toggle.Types.YES_NO}
+              onChange={this.handleSaveForFuture.bind(this)} /> } />
+        );
+      }
+
+      if(this.state.saveForFuture) {
+        futureUseSegment.push(
+          <Field 
+            key={'audienceName'}
+            labelWidth={55}
+            label={<Label text='Audience name' />}
+            input={<TextInput placeholder='Choose a name...' onChage={this.handleAudienceName.bind(this)} /> } />
+        );
+      }
+    } else {
+      futureUseSegment.push(
+        <Field 
+          key={'audienceName'}
+          labelWidth={55}
+          label={<Label text='Audience name' /> }
+          input={<TextInput placeholder='Choose a name...' onChange={this.handleAudienceName.bind(this)} /> } />
+      );
+    }
+
     return (
       <Modal
         title={ this.props.editMode ? 'Edit audience' : 'Create a new audience'}
@@ -154,9 +220,15 @@ export default class PushAudienceDialog extends React.Component {
           label={<Label text='Which platforms should be included?' />}
           input={platformSelect} />
         <div className={styles.filter}>
-
+          <Filter 
+            schema={this.props.schema}
+            filters={this.state.filters}
+            onChange={(filters) => {
+              this.setState({filters}, this.fetchAudienceSize.bind(this));
+            }}
+            renderRow={(props) => <InstallationCondition {...props} />} />
         </div>
-
+        
         <div className={[styles.addConditions, nonEmptyConditions ? styles.nonEmptyConditions : ''].join(' ')}>
           <Button value={nonEmptyConditions ? 'Add another condition' : 'Add a condition'} onClick={this.handleAddCondition.bind(this)} />
         </div>

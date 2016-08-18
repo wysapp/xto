@@ -1,12 +1,14 @@
-
-
+/*
+ * Copyright (c) 2016-present, Parse, LLC
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ */
 @import 'stylesheets/globals.scss';
-
-
 .radiobutton {
   display: inline-block;
   margin-right: 12px;
-
   input[type=radio] {
     opacity: 0;
     width: 0;
@@ -15,7 +17,6 @@
     margin: 0;
     position: absolute;
   }
-
   span {
     position: relative;
     display: inline-block;
@@ -40,10 +41,9 @@
 
       top: 50%;
       left: 50%;
-
       @include transform(translate(-50%, -50%));
 
-      transition: all 0.2s cubic-bezier(0,0,0.74, 2.2);
+      transition: all 0.2s cubic-bezier(0, 0, 0.74, 2.2);
     }
   }
 
