@@ -1,22 +1,26 @@
-
-
-import Popover from 'components/Popover/Popover.react';
+/*
+ * Copyright (c) 2016-present, Parse, LLC
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ */
+import Popover   from 'components/Popover/Popover.react';
 import PropTypes from 'lib/PropTypes';
-import Position from 'lib/Position';
-import React from 'react';
-import ReactDOM from 'react-dom';
-import styles from 'components/ChromeDropdown/ChromeDropdown.scss';
+import Position  from 'lib/Position';
+import React     from 'react';
+import ReactDOM  from 'react-dom';
+import styles    from 'components/ChromeDropdown/ChromeDropdown.scss';
 
 export default class ChromeDropdown extends React.Component {
   constructor() {
     super();
 
-    this.state = {
+    this.state = { 
       open: false,
       selected: false,
     };
   }
-
 
   componentWillReceiveProps(nextProps, nextContext) {
     this.keyValueMap = {};
@@ -25,7 +29,6 @@ export default class ChromeDropdown extends React.Component {
         this.keyValueMap[value.key] = value.value;
       }
     });
-
     if (Object.keys(this.keyValueMap).length === 0) {
       this.keyValueMap = null;
     }
@@ -41,30 +44,29 @@ export default class ChromeDropdown extends React.Component {
 
   select(value, e) {
     e.stopPropagation();
-    this.setState({
+    this.setState({ 
       open: false,
-      selected: true
+      selected: true,
     }, () => {
       this.props.onChange(value);
     });
   }
 
   render() {
-    let widthStyle = {width: this.props.width || 140};
+    let widthStyle = { width: this.props.width || 140 };
     let styles = this.styles;
     let color = this.props.color || 'purple';
 
     let label = this.props.value;
-    if (this.keyValueMap ) {
+    if (this.keyValueMap) {
       label = this.keyValueMap[label];
     }
-
     if (!this.state.selected && this.props.placeholder) {
+      // If it's time to show placeholder, show placeholder.
       label = this.props.placeholder;
     }
-
     let content = (
-      <div className={[styles.current, styles[color]].join(' ')} onClick={() => this.setState({open: true})}>
+      <div className={[styles.current, styles[color]].join(' ')} onClick={() => this.setState({ open: true })}>
         <div>{label}</div>
       </div>
     );
@@ -72,15 +74,14 @@ export default class ChromeDropdown extends React.Component {
     if (this.state.open) {
       let position = Position.inWindow(this.node);
       let measuredWidth = this.node.offsetWidth;
-      widthStyle = { width: measuredWidth};
-
+      widthStyle = { width: measuredWidth };
       content = (
-        <Popover fixed={true} position={position} onExternalClick={() => this.setState({open: false})}>
+        <Popover fixed={true} position={position} onExternalClick={() => this.setState({ open: false })}>
           <div style={widthStyle} className={[styles.menu, styles[color]].join(' ')}>
             {this.props.options.map((o) => {
               let key = o;
-              let value = 0;
-              if ( o instanceof Object) {
+              let value = o;
+              if (o instanceof Object) {
                 key = o.key;
                 value = o.value;
               }
@@ -97,9 +98,7 @@ export default class ChromeDropdown extends React.Component {
       </div>
     );
   }
-
 }
-
 
 ChromeDropdown.propTypes = {
   color: PropTypes.oneOf(['blue', 'purple']).describe(
@@ -114,7 +113,7 @@ ChromeDropdown.propTypes = {
   onChange: PropTypes.func.isRequired.describe(
     'A function called when the dropdown is changed.'
   ),
-  width: PropTypes.string.describe(
+  width: PropTypes.number.describe(
     'An optional width override.'
   ),
   placeholder: PropTypes.string.describe(

@@ -1,39 +1,41 @@
-
-
-import ChromeDropdown from 'components/ChromeDropdown/ChromeDropdown.react';
+/*
+ * Copyright (c) 2016-present, Parse, LLC
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ */
+import ChromeDropdown  from 'components/ChromeDropdown/ChromeDropdown.react';
 import { Constraints } from 'lib/Filters';
-import DateTimeEntry  from 'components/DateTimeEntry/DateTimeEntry.react';
-
-import Icon from 'components/Icon/Icon.react';
-import Parse from 'parse';
-import PropTypes from 'lib/PropTypes';
-import React from 'react';
-import ReactDOM from 'react-dom';
-import styles from 'components/BrowserFilter/BrowserFilter.scss';
+import DateTimeEntry   from 'components/DateTimeEntry/DateTimeEntry.react';
+import Icon            from 'components/Icon/Icon.react';
+import Parse           from 'parse';
+import PropTypes       from 'lib/PropTypes';
+import React           from 'react';
+import ReactDOM        from 'react-dom';
+import styles          from 'components/BrowserFilter/BrowserFilter.scss';
 import validateNumeric from 'lib/validateNumeric';
 
 let constraintLookup = {};
-
 for (let c in Constraints) {
-  constraintLookup[ Constraints[c].name ] = c;
+  constraintLookup[Constraints[c].name] = c;
 }
 
 let setFocus = (input) => {
-  if ( input !== null) {
+  if (input !== null) {
     ReactDOM.findDOMNode(input).focus();
   }
 }
 
-
 function compareValue(info, value, onChangeCompareTo, active) {
-  switch(info.type) {
+  switch (info.type) {
     case null:
       return null;
     case 'String':
-      return <input type='text' value={value} onChange={(e) => onChangeCompareTo(e.target.value)} ref={setFocus} />;
+      return <input type='text' value={value} onChange={(e) => onChangeCompareTo(e.target.value)} ref={setFocus}/>;
     case 'Pointer':
       return (
-        <input 
+        <input
           type='text'
           value={value.objectId || ''}
           onChange={(e) => {
@@ -47,10 +49,9 @@ function compareValue(info, value, onChangeCompareTo, active) {
       return <ChromeDropdown color={active ? 'blue' : 'purple'} value={value ? 'True' : 'False'} options={['True', 'False']} onChange={(val) => onChangeCompareTo(val === 'True')} />;
     case 'Number':
       return <input type='text' value={value} onChange={(e) => onChangeCompareTo(validateNumeric(e.target.value) ? parseFloat(e.target.value) : (parseFloat(value) || ''))} />;
-    
     case 'Date':
       return (
-        <DateTimeEntry 
+        <DateTimeEntry
           fixed={true}
           className={styles.date}
           value={Parse._decode('date', value)}
@@ -61,18 +62,18 @@ function compareValue(info, value, onChangeCompareTo, active) {
 }
 
 let FilterRow = ({
-  fields,
-  constraints,
-  compareInfo,
-  currentField,
-  currentConstraint,
-  compareTo,
-  onChangeField,
-  onChangeConstraint,
-  onChangeCompareTo,
-  onDeleteRow,
-  active
-}) => (
+    fields,
+    constraints,
+    compareInfo,
+    currentField,
+    currentConstraint,
+    compareTo,
+    onChangeField,
+    onChangeConstraint,
+    onChangeCompareTo,
+    onDeleteRow,
+    active,
+  }) => (
   <div className={styles.row}>
     <ChromeDropdown
       color={active ? 'blue' : 'purple'}
@@ -86,9 +87,7 @@ let FilterRow = ({
       options={constraints.map((c) => Constraints[c].name)}
       onChange={(c) => onChangeConstraint(constraintLookup[c])} />
     {compareValue(compareInfo, compareTo, onChangeCompareTo, active)}
-    <a role='button' href='javascript:;' className={styles.remove} onClick={onDeleteRow}>
-      <Icon name='minus-solid' width={14} height={14} fill='rgba(0,0,0,0.4)' />
-    </a>
+    <a role='button' href='javascript:;' className={styles.remove} onClick={onDeleteRow}><Icon name='minus-solid' width={14} height={14} fill='rgba(0,0,0,0.4)' /></a>
   </div>
 );
 

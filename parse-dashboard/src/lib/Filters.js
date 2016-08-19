@@ -111,17 +111,20 @@ export const DefaultComparisons = {
   'Date': Parse._encode(new Date()),
 };
 
+// Given a class schema and an array of current filters, this returns the remaining available filters
+//   schema is a map of objects - column name -> {type string, targetClass string}
+//   currentFilters is an immutable List of filters, Maps of the form { column: string, constraint: string, ... }
+//   blacklist is an optional array of constraints to ignore
 export function availableFilters(schema, currentFilters, blacklist) {
   blacklist = blacklist || [];
   let disabled = {};
   if (currentFilters) {
     currentFilters.forEach((filter) => {
-      if ( !Constraints[filter.get('constraint')].composable) {
+      if (!Constraints[filter.get('constraint')].composable) {
         disabled[filter.get('field')] = true;
       }
     });
   }
-
   let available = {};
   for (let col in schema) {
     if (disabled[col]) {
@@ -133,7 +136,5 @@ export function availableFilters(schema, currentFilters, blacklist) {
     }
     available[col] = FieldConstraints[type].filter((c) => blacklist.indexOf(c) < 0);
   }
-
   return available;
-}
-
+};

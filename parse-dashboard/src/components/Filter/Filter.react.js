@@ -6,6 +6,18 @@ import PropTypes from 'lib/PropTypes';
 import React from 'react';
 
 
+
+function changeField(schema, filters, index, newField) {
+
+  
+  let newFilter = new Map({
+    field: newField,
+    constraint: Filters.FieldConstraints[schema[newField].type][0],
+    compareTo: Filters.DefaultComparisons[schema[newField].type]
+  });
+  return filters.set(index, newField);
+}
+
 let Filter = ({schema, filters, renderRow, onChange, blacklist}) => {
   blacklist = blacklist || [];
   let available = Filters.availableFilters(schema, filters);
