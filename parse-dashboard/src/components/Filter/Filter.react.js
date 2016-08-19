@@ -8,15 +8,31 @@ import React from 'react';
 
 
 function changeField(schema, filters, index, newField) {
-
-  
   let newFilter = new Map({
     field: newField,
     constraint: Filters.FieldConstraints[schema[newField].type][0],
     compareTo: Filters.DefaultComparisons[schema[newField].type]
   });
-  return filters.set(index, newField);
+  return filters.set(index, newFilter);
 }
+
+
+function changeConstraint(schema, filters, index, newConstraint) {
+  
+  let field = filters.get(index).get('field');
+  let compareType = schema[field].type;
+  if (Filters.Constraints[newConstraint].hasOwnProperty('field')) {
+    compareType = Filters.Constraints[newConstraint].field;
+  }
+
+  let newFilter = new Map({
+    field: field,
+    constraint: newConstraint,
+    compareTo: Filters.DefaultComparisons[compareType]
+  })
+  return filters.set(index, newFilter);
+}
+
 
 let Filter = ({schema, filters, renderRow, onChange, blacklist}) => {
   blacklist = blacklist || [];
@@ -38,6 +54,7 @@ let Filter = ({schema, filters, renderRow, onChange, blacklist}) => {
         let constraints = Filters.FieldConstraints[schema[field].type].filter((c) => blacklist.indexOf(c) < 0);
 
         let compareType = schema[field].type;
+        
         if (Filters.Constraints[constraint].hasOwnProperty('field')) {
           compareType = Filters.Constraints[constraint].field;
         }
@@ -59,7 +76,7 @@ let Filter = ({schema, filters, renderRow, onChange, blacklist}) => {
           },
 
           onChangeConstraint: newConstraint => {
-            onChange(chnageConstraint(schema, filters, i, newConstraint));
+            onChange(changeConstraint(schema, filters, i, newConstraint));
           },
           onChangeCompareTo: newCompare => {
             onChange(changeCompareTo(schema, filters, i, compareType, newCompare));

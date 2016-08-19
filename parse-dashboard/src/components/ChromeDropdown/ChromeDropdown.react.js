@@ -44,6 +44,7 @@ export default class ChromeDropdown extends React.Component {
 
   select(value, e) {
     e.stopPropagation();
+
     this.setState({ 
       open: false,
       selected: true,
@@ -79,6 +80,7 @@ export default class ChromeDropdown extends React.Component {
         <Popover fixed={true} position={position} onExternalClick={() => this.setState({ open: false })}>
           <div style={widthStyle} className={[styles.menu, styles[color]].join(' ')}>
             {this.props.options.map((o) => {
+              
               let key = o;
               let value = o;
               if (o instanceof Object) {

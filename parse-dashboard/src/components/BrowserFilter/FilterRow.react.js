@@ -73,23 +73,26 @@ let FilterRow = ({
     onChangeCompareTo,
     onDeleteRow,
     active,
-  }) => (
-  <div className={styles.row}>
-    <ChromeDropdown
-      color={active ? 'blue' : 'purple'}
-      value={currentField}
-      options={fields}
-      onChange={onChangeField} />
-    <ChromeDropdown
-      width={compareInfo.type ? 175 : 325}
-      color={active ? 'blue' : 'purple'}
-      value={Constraints[currentConstraint].name}
-      options={constraints.map((c) => Constraints[c].name)}
-      onChange={(c) => onChangeConstraint(constraintLookup[c])} />
-    {compareValue(compareInfo, compareTo, onChangeCompareTo, active)}
-    <a role='button' href='javascript:;' className={styles.remove} onClick={onDeleteRow}><Icon name='minus-solid' width={14} height={14} fill='rgba(0,0,0,0.4)' /></a>
-  </div>
-);
+  }) => {
+
+  return (
+    <div className={styles.row}>
+      <ChromeDropdown
+        color={active ? 'blue' : 'purple'}
+        value={currentField}
+        options={fields}
+        onChange={onChangeField} />
+      <ChromeDropdown
+        width={compareInfo.type ? 175 : 325}
+        color={active ? 'blue' : 'purple'}
+        value={Constraints[currentConstraint].name}
+        options={constraints.map((c) => Constraints[c].name)}
+        onChange={(c) => onChangeConstraint(constraintLookup[c])} />
+      {compareValue(compareInfo, compareTo, onChangeCompareTo, active)}
+      <a role='button' href='javascript:;' className={styles.remove} onClick={onDeleteRow}><Icon name='minus-solid' width={14} height={14} fill='rgba(0,0,0,0.4)' /></a>
+    </div>
+  );
+}
 
 export default FilterRow;
 

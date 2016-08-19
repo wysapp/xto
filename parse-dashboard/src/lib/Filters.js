@@ -119,7 +119,9 @@ export function availableFilters(schema, currentFilters, blacklist) {
   blacklist = blacklist || [];
   let disabled = {};
   if (currentFilters) {
+    
     currentFilters.forEach((filter) => {
+      
       if (!Constraints[filter.get('constraint')].composable) {
         disabled[filter.get('field')] = true;
       }
