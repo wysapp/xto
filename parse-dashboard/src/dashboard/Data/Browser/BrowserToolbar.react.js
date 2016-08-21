@@ -42,6 +42,7 @@ let BrowserToolbar = ({
   enableExportClass,
   enableSecurityDialog,
 }) => {
+  
   let selectionLength = Object.keys(selection).length;
   let details = [];
   if ( count !== undefined){

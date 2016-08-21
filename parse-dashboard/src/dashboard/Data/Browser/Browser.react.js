@@ -63,6 +63,9 @@ export default class Browser extends DashboardView {
     this.prefetchData = this.prefetchData.bind(this);
     this.fetchData = this.fetchData.bind(this);
 
+    this.updateFilters = this.updateFilters.bind(this);
+    this.showDeleteRows = this.showDeleteRows.bind(this);
+
     this.selectRow = this.selectRow.bind(this);
 
     this.addRow = this.addRow.bind(this);
@@ -74,7 +77,6 @@ export default class Browser extends DashboardView {
   }
 
   componentWillMount() {
-
     this.props.schema.dispatch(ActionTypes.FETCH)
     .then(() => this.handleFetchedSchema());
     if (!this.props.params.className && this.props.schema.data.get('classes')) {
@@ -84,9 +86,10 @@ export default class Browser extends DashboardView {
     }
   }
 
-
   componentWillReceiveProps(nextProps, nextContext) {
+    
     if (this.context !== nextContext) {
+      
       if (this.props.params.appId !== nextProps.params.appId || !this.props.params.className) {
         this.setState({ counts: {} });
         Parse.Object._clearAllState();
@@ -95,6 +98,7 @@ export default class Browser extends DashboardView {
       nextProps.schema.dispatch(ActionTypes.FETCH)
       .then(() => this.handleFetchedSchema());
     }
+    
     if (!nextProps.params.className && nextProps.schema.data.get('classes')) {
       this.redirectToFirstClass(nextProps.schema.data.get('classes'));
     }
@@ -168,6 +172,11 @@ export default class Browser extends DashboardView {
     this.setState({showCreateClassDialog: true});
   }
 
+
+
+  showDeleteRows(rows) {
+    this.setState({ rowsToDelete: rows });
+  }
 
   createClass(className) {
     
@@ -247,7 +256,9 @@ export default class Browser extends DashboardView {
 
 
   updateFilters(filters) {
+
     const relation = this.state.relation;
+    
     if ( relation ) {
       this.setRelation(relation, filters);
     } else {
@@ -260,6 +271,7 @@ export default class Browser extends DashboardView {
   }
 
 
+  
   selectRow(id, checked) {
     this.setState(({ selection }) => {
       if ( id ==='*') {
@@ -322,6 +334,7 @@ export default class Browser extends DashboardView {
   }
 
   renderContent() {
+    
     let browser = null;
     let className = this.props.params.className;
     if (this.state.relation) {

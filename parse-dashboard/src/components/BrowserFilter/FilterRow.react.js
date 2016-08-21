@@ -28,6 +28,7 @@ let setFocus = (input) => {
 }
 
 function compareValue(info, value, onChangeCompareTo, active) {
+
   switch (info.type) {
     case null:
       return null;
@@ -50,6 +51,7 @@ function compareValue(info, value, onChangeCompareTo, active) {
     case 'Number':
       return <input type='text' value={value} onChange={(e) => onChangeCompareTo(validateNumeric(e.target.value) ? parseFloat(e.target.value) : (parseFloat(value) || ''))} />;
     case 'Date':
+   
       return (
         <DateTimeEntry
           fixed={true}

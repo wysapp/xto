@@ -19,6 +19,124 @@ import {
 let origin = new Position(0, 0);
 
 
+function renderAdvancedCheckboxes(rowId, perms, advanced, onChange) {
+
+
+  let get = perms.get('get').get(rowId) || perms.get('get').get('*');
+  let find = perms.get('find').get(rowId) || perms.get('find').get('*');
+
+  let create = perms.get('create').get(rowId) || perms.get('create').get('*');
+  let update = perms.get('update').get(rowId) || perms.get('update').get('*');
+  let del = perms.get('delete').get(rowId) || perms.get('delete').get('*');
+
+  let add = perms.get('addField').get(rowId) || perms.get('addField').get('*');
+
+  if (advanced) {
+    return [
+      <div key='second' className={[styles.check, styles.second].join(' ')}>
+        {!perms.get('get').get('*') || rowId === '*' ?
+          <Checkbox
+            label='Get'
+            checked={perms.get('get').get(rowId)}
+            onChange={(value) => onChange(rowId, 'get', value)} /> :
+          <Icon name='check' width={20} height={20} />}
+      </div>,
+      <div key='third' className={[styles.check, styles.third].join(' ')}>
+        {!perms.get('find').get('*') || rowId === '*' ?
+          <Checkbox
+            label='Find'
+            checked={perms.get('find').get(rowId)}
+            onChange={(value) => onChange(rowId, 'find', value)} /> :
+          <Icon name='check' width={20} height={20} />}
+      </div>,
+      <div key='fourth' className={[styles.check, styles.fourth].join(' ')}>
+        {!perms.get('create').get('*') || rowId === '*' ?
+          <Checkbox
+            label='Create'
+            checked={perms.get('create').get(rowId)}
+            onChange={(value) => onChange(rowId, 'create', value)} /> :
+          <Icon name='check' width={20} height={20} />}
+      </div>,
+      <div key='fifth' className={[styles.check, styles.fifth].join(' ')}>
+        {!perms.get('update').get('*') || rowId === '*' ?
+          <Checkbox
+            label='Update'
+            checked={perms.get('update').get(rowId)}
+            onChange={(value) => onChange(rowId, 'update', value)} /> :
+          <Icon name='check' width={20} height={20} />}
+      </div>,
+      <div key='sixth' className={[styles.check, styles.sixth].join(' ')}>
+        {!perms.get('delete').get('*') || rowId === '*' ?
+          <Checkbox
+            label='Delete'
+            checked={perms.get('delete').get(rowId)}
+            onChange={(value) => onChange(rowId, 'delete', value)} /> :
+          <Icon name='check' width={20} height={20} />}
+      </div>,
+      <div key='seventh' className={[styles.check, styles.seventh].join(' ')}>
+        {!perms.get('addField').get('*') || rowId === '*' ?
+          <Checkbox
+            label='Add field'
+            checked={perms.get('addField').get(rowId)}
+            onChange={(value) => onChange(rowId, 'addField', value)} /> :
+          <Icon name='check' width={20} height={20} />}
+      </div>,
+    ];
+  }
+
+  let read = get || find;
+  let write = create || update || del;
+  let readChecked = get && find;
+  let writeChecked = create && update && del;
+
+  return [
+    <div key='second' className={[styles.check, styles.second].join(' ')}>
+      {!(perms.get('get').get('*') && perms.get('find').get('*')) || rowId === '*' ?
+        <Checkbox
+          label='Read'
+          checked={readChecked}
+          indeterminate={!readChecked && read}
+          onChange={(value) => onChange(rowId, ['get', 'find'], value)} /> :
+        <Icon name='check' width={20} height={20} />}
+    </div>,
+    <div key='third' className={[styles.check, styles.third].join(' ')}>
+      {!(perms.get('create').get('*') && perms.get('update').get('*') && perms.get('delete').get('*')) || rowId === '*' ?
+        <Checkbox
+          label='Write'
+          checked={writeChecked}
+          indeterminate={!writeChecked && write}
+          onChange={(value) => onChange(rowId, ['create', 'update', 'delete'], value)} /> :
+        <Icon name='check' width={20} height={20} />}
+    </div>,
+  ];
+}
+
+
+function renderSimpleCheckboxes(rowId, perms, onChange) {
+  let readChecked = perms.get('read').get(rowId) || perms.get('read').get('*');
+  let writeChecked = perms.get('write').get(rowId) || perms.get('write').get('*');
+
+  return [
+    <div key='second' className={[styles.check, styles.second].join(' ')}>
+      {!perms.get('read').get('*') || rowId === '*' ?
+        <Checkbox
+          label='Read'
+          checked={readChecked}
+          onChange={(value) => onChange(rowId, 'read', value)} /> :
+        <Icon name='check' width={20} height={20} />}
+    </div>,
+    <div key='third' className={[styles.check, styles.third].join(' ')}>
+      {!perms.get('write').get('*') || rowId === '*' ?
+        <Checkbox
+          label='Write'
+          checked={writeChecked}
+          onChange={(value) => onChange(rowId, 'write', value)} /> :
+        <Icon name='check' width={20} height={20} />}
+    </div>,
+  ];
+}
+
+
 
 export default class PermissionsDialog extends React.Component {
   constructor({
@@ -85,7 +203,111 @@ export default class PermissionsDialog extends React.Component {
     };
   }
 
+
+  toggleField(rowId, type, value) {
+    this.setState((state) => {
+      let perms = state.perms;
+      if ( Array.isArray(type)) {
+        type.forEach((t) => {
+          perms = perms.setIn([t, rowId], value);
+        });
+      } else {
+        perms = perms.setIn([type, rowId], value);
+      }
+      return { perms };
+    });
+  }
+
+  handleKeyDown(e) {
+    if( e.keyCode === 13) {
+      this.checkEntry();
+    }
+  }
+
+
+  checkEntry() {
+    if (this.state.newEntry === '') {
+      return;
+    }
+
+    if ( this.props.validateEntry ) {
+      this.props.validateEntry(this.state.newEntry).then((type) => {
+        if ( type.user || type.role ) {
+          let id = type.user ? type.user.id : 'role:' + type.role.getName();
+          if (this.state.keys.indexOf(id) > -1 || this.state.newKeys.indexOf(id) > -1) {
+            return this.setState({
+              entryError: 'You already have a row for this object'
+            })
+          }
+
+          let nextPerms = this.state.perms;
+          if ( this.props.advanced) {
+            nextPerms = nextPerms.setIn(['get', id], true);
+            nextPerms = nextPerms.setIn(['find', id], true);
+            nextPerms = nextPerms.setIn(['create', id], true);
+            nextPerms = nextPerms.setIn(['update', id], true);
+            nextPerms = nextPerms.setIn(['delete', id], true);
+            nextPerms = nextPerms.setIn(['addField', id], true);
+          } else {
+            nextPerms = nextPerms.setIn(['read', id], true);
+            nextPerms = nextPerms.setIn(['write', id], true);
+          }
+
+          let nextKeys = this.state.newKeys.concat([id]);
+          return this.setState({
+            perms: nextPerms,
+            newKeys: nextKeys,
+            newEntry: '',
+            entryError: null,
+          });
+        }
+
+        if (type.pointer) {
+          let nextPerms = this.state.pointerPerms.set(type.pointer, Map({ read: true, write: true }));
+
+          let nextKeys = this.state.newKeys.concat('pointer:' + type.pointer);
+
+          this.setState({
+            pointerPerms: nextPerms,
+            newKeys: nextKeys,
+            newEntry: '',
+            entryError: null,
+          });
+        }
+      }, () => {
+        if (this.props.advanced && this.props.enablePointerPermissions) {
+          this.setState({
+            entryError: 'Role, User or pointer field not found. Enter a valid Role name, Username, User ID or User pointer field name.'
+          });
+        } else {
+          this.setState({
+            entryError: 'Role or User not found. Enter a valid Role name, Username, or User ID.'
+          });
+        }
+      })
+    }
+  }
+
+
+  renderPublicCheckboxes() {
+    if (this.state.transitioning) {
+      return null;
+    }
+
+    if ( this.props.advanced) {
+      return renderAdvancedCheckboxes(
+        '*',
+        this.state.perms,
+        this.state.level === 'Advanced',
+        this.toggleField.bind(this)
+      );
+    }
+
+    return renderSimpleCheckboxes('*', this.state.perms, this.toggleField.bind(this));
+  }
+
   render() {
+    
     let classes = [ styles.dialog, unselectable];
     if ( this.state.level === 'Advanced') {
       classes.push(styles.advanced);
@@ -104,7 +326,7 @@ export default class PermissionsDialog extends React.Component {
           <div className={styles.header}>
             {this.props.title}
             {this.props.advanced ?
-              <div className={styles.setting} onClick={() => this.setState(({showLevels}) => ({showLevels: !showLevels}))}>
+              <div className={styles.settings} onClick={() => this.setState(({showLevels}) => ({showLevels: !showLevels}))}>
                 <Icon name='gear-solid' width={20} height={20} />
               </div> : null
             }
@@ -118,7 +340,7 @@ export default class PermissionsDialog extends React.Component {
                 darkBg={true}
                 value={this.state.level}
                 type={Toggle.Types.TWO_WAY}
-                optoinLeft='Simple'
+                optionLeft='Simple'
                 optionRight='Advanced'
                 onChange={(level) => {
                   if ( this.state.transitioning || this.state.level === level) {

@@ -34,6 +34,16 @@ function changeConstraint(schema, filters, index, newConstraint) {
 }
 
 
+
+function changeCompareTo(schema, filters, index, type, newCompare) {
+  let newValue = newCompare;
+  return filters.set(index, filters.get(index).set('compareTo', newValue));
+}
+
+function deleteRow(filters, index) {
+  return filters.delete(index);
+}
+
 let Filter = ({schema, filters, renderRow, onChange, blacklist}) => {
   blacklist = blacklist || [];
   let available = Filters.availableFilters(schema, filters);

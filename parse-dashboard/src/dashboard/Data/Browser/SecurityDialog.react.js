@@ -44,6 +44,8 @@ export default class SecurityDialog extends React.Component {
   }
 
   render() {
+
+    
     let dialog = null;
     let parseServerSupportsPointerPermissions = this.context.currentApp.serverInfo.features.schemas.editClassLevelPermissions;
     if (this.props.perms && this.state.open) {
@@ -51,7 +53,7 @@ export default class SecurityDialog extends React.Component {
         <PermissionsDialog
           title='Edit Class Level Permissions'
           enablePointerPermissions={parseServerSupportsPointerPermissions}
-          advanced={ture}
+          advanced={true}
           confirmText='Save CLP'
           details={<a href='https://parse.com/docs/ios/guide#security-class-level-permissions'>Learn more about CLPs and app security</a>}
           permissions={this.props.perms}

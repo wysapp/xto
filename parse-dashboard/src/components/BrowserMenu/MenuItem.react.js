@@ -1,7 +1,7 @@
 
 
 import React from 'react';
-import styels from 'components/BrowserMenu/BrowserMenu.scss';
+import styles from 'components/BrowserMenu/BrowserMenu.scss';
 
 
 let MenuItem = ({text, disabled, onClick}) => {
