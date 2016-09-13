@@ -41,7 +41,7 @@ if (!options.serverURL) {
   options.serverURL = `http://localhost:${options.port}${options.mountPath}`;
 }
 
-
+console.log('sssssssssssssssss', options);
 
 if ( !options.appId || !options.masterKey || !options.serverURL) {
   program.outputHelp();
