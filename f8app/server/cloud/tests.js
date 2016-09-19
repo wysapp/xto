@@ -46,3 +46,37 @@ Parse.Cloud.define('test_push', function(request, response) {
   );
   
 });
+
+Parse.Cloud.define('test_survey', function(request, response) {
+  Parse.Cloud.useMasterKey();
+
+  var user = request.user;
+  if (!user) {
+    return response.error({message: 'Not logged in'});
+  }
+
+  new Parse.Query(Survey)
+    .include('session')
+    .find()
+    .then(pickRandom)
+    .then(function(survey) {
+      var sessionTitle = survey.get('session').get('sessionTitle');
+      return new SurveyResult().save({
+        user: user,
+        survey: survey,
+      }).then(function() {
+        return Parse.Push.send({
+          where: new Parse.Query(Parse.Installation).equalTo('user', user),
+          push_time: new Date(Date.now() + 3000),
+          data: {
+            badge: 'Increment',
+            alert: 'How did "' + sessionTitle + '" go?',
+            e: true,
+          }
+        });
+      });
+    }).then(
+      function() {response.success([]); },
+      function(error) {response.error(error); }
+    );
+});
