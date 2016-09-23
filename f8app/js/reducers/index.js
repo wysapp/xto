@@ -8,4 +8,6 @@ module.exports = combineReducers({
   notifications: require('./notifications'),
   maps: require('./maps'),
   sessions: require('./sessions'),
+
+  surveys: require('./surveys'),
 });
