@@ -89,6 +89,7 @@ var F8Navigator = React.createClass({
   },
 
   renderScene: function(route, navigator) {
+    
     if ( route.allSessions) {
       return (
         <SessionsCarousel

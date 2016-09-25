@@ -43,6 +43,8 @@ var MenuItem = require('./MenuItem');
 
 var LoginButton = require('../common/LoginButton');
 
+var GeneralScheduleView = require('./schedule/GeneralScheduleView');
+
 var unseenNotificationsCount = require('./notifications/unseenNotificationsCount');
 
 var { switchTab, logOutWithPrompt } = require('../actions');
@@ -196,7 +198,7 @@ class F8TabsView extends React.Component {
     switch (this.props.tab ) {
       case 'schedule':
         return (
-          <View><Text>sssssssssssssssssssssssssssss</Text></View>
+          <GeneralScheduleView navigator={this.props.navigator} />
         );
       
       case 'my-schedule':
