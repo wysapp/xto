@@ -1,3 +1,10 @@
+/**
+ * Copyright 2016 Facebook, Inc.
+ *
+ * @flow
+ */
+
+
 'use strict';
 
 import { applyMiddleware, createStore } from 'redux';
@@ -6,7 +13,7 @@ import thunk from 'redux-thunk';
 var promise = require('./promise');
 var array = require('./array');
 var analytics = require('./analytics');
-var reducers = require('./reducers');
+var reducers = require('../reducers');
 var createLogger = require('redux-logger');
 
 import { persistStore, autoRehydrate } from 'redux-persist';
@@ -24,6 +31,7 @@ var createF8Store = applyMiddleware(thunk, promise, array, analytics, logger)(cr
 
 function configureStore(onComplete: ?() => void) {
   const store = autoRehydrate()(createF8Store)(reducers);
+  
   persistStore(store, { storage: AsyncStorage}, onComplete);
 
   if(isDebuggingInChrome) {

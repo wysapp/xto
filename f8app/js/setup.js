@@ -1,3 +1,7 @@
+/**
+ * Copyright 2016 Facebook, Inc.
+ * @flow
+ */
 
 'use strict';
 
@@ -11,6 +15,8 @@ var { Provider } = require('react-redux');
 
 var configureStore = require('./store/configureStore');
 
+var {serverURL} = require('./env');
+
 function setup(): ReactClass<{}> {
   console.disableYellowBox = true;
   Parse.initialize('oss-f8-app-2016');
@@ -19,7 +25,7 @@ function setup(): ReactClass<{}> {
   FacebookSDK.init();
   Parse.FacebookUtils.init();
   Relay.injectNetworkLayer(
-    new Relay.DefaultNetworklayer(`${serverURL}/graphql`, {
+    new Relay.DefaultNetworkLayer(`${serverURL}/graphql`, {
       fetchTimeout: 30000,
       retryDelays: [5000, 10000],
     })

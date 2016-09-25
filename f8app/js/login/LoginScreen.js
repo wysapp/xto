@@ -10,7 +10,6 @@ var StatusBar = require('StatusBar');
 var StyleSheet = require('StyleSheet');
 var View = require('View');
 var { Text } = require('F8Text');
-
 var LoginButton = require('../common/LoginButton');
 var TouchableOpacity = require('TouchableOpacity');
 
@@ -60,7 +59,7 @@ class LoginScreen extends React.Component {
           <Animated.Text style={[styles.h2, this.fadeIn(1000, 10)]}>
             April 12 + 13 / Fort Mason Center
           </Animated.Text>
-          <Animated.Text style={[styles.h3, this.fadeIn(12000, 10)]}>
+          <Animated.Text style={[styles.h3, this.fadeIn(1200, 10)]}>
             SAN FRANCISCO, CALIFORNIA
           </Animated.Text>
         </View>

@@ -1,3 +1,9 @@
+/**
+ * Copyright 2016 Facebook, Inc.
+ *
+ * @flow
+ */
+
 
 'use strict';
 
@@ -8,6 +14,9 @@ module.exports = combineReducers({
   notifications: require('./notifications'),
   maps: require('./maps'),
   sessions: require('./sessions'),
+  user: require('./user'),
+
+  navigation: require('./navigation'),
 
   surveys: require('./surveys'),
 });

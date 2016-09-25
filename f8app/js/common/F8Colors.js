@@ -1,3 +1,9 @@
+/**
+ * Copyright 2016 Facebook, Inc.
+ * 
+ * @providesModule F8Colors
+ * @flow
+ */
 
 'use strict';
 

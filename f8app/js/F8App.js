@@ -1,15 +1,22 @@
+/**
+ * Copyright 2016 Facebook, Inc.
+ * @providesModule F8App
+ * @flow
+ */
+
 
 'use strict';
 
 var React = require('React');
 var AppState = require('AppState');
 var LoginScreen = require('./login/LoginScreen');
-var PushNotificationsController = require('./PushNotificationsController');
+// var PushNotificationsController = require('./PushNotificationsController');
 var StyleSheet = require('StyleSheet');
 var F8Navigator = require('F8Navigator');
 var CodePush = require('react-native-code-push');
 
 var View = require('View');
+var Text = require('Text');
 
 var StatusBar = require('StatusBar');
 
@@ -59,7 +66,6 @@ var F8App = React.createClass({
   },
 
   render: function() {
-
    
     if (!this.props.isLoggedIn) {
       return <LoginScreen />;
@@ -73,7 +79,7 @@ var F8App = React.createClass({
           barStyle="light-content"
           />
         <F8Navigator />
-        <PushNotificationsController />
+        
       </View>
     );
   },
@@ -88,9 +94,12 @@ var styles = StyleSheet.create({
 
 
 function select(store) {
+  
   return {
     isLoggedIn: store.user.isLoggedIn || store.user.hasSkippedLogin,
   };
 }
 
 module.exports = connect(select)(F8App);
+
+// module.exports = F8App;

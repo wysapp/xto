@@ -1,7 +1,12 @@
+/**
+ * Copyright 2016 Facebook, Inc.
+ *
+ * @flow
+ */
 
 'use strict';
 
-const createParseReducer = require('./creteParseReducer');
+const createParseReducer = require('./createParseReducer');
 
 export type Map = {
   id: string;

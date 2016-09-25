@@ -1,3 +1,10 @@
+/**
+ * Copyright 2016 Facebook, Inc.
+ *
+ * @flow
+ */
+
+
 'use strict';
 
 import type { Action } from '../actions/types';

@@ -1,3 +1,9 @@
+/**
+ * Copyright 2016 Facebook, Inc.
+ *
+ * @flow
+ */
+
 'use strict';
 
 const createParseReducer = require('./createParseReducer');

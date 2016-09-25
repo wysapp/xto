@@ -1,3 +1,9 @@
+/**
+ * Copyright 2016 Facebook, Inc.
+ *
+ * @flow
+ */
+
 'use strict';
 
 import type { Action } from '../actions/types';
@@ -9,6 +15,8 @@ export type FriendsSchedule = {
 };
 
 type state = Array<FriendsSchedule>;
+
+
 
 function friendsSchedules(state: State = [], action: Action) : State {
   if (action.type === 'LOADED_FRIENDS_SCHEDULES') {

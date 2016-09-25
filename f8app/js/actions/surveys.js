@@ -1,3 +1,9 @@
+/**
+ * Copyright 2016 Facebook, Inc.
+ *
+ * @flow
+ */
+
 'use strict';
 
 
@@ -9,7 +15,7 @@ async function loadSurveys(): Promise<Action> {
   const list = await Parse.Cloud.run('surveys');
 
   return {
-    type: 'LOADED_SURVEYS';
+    type: 'LOADED_SURVEYS',
     list,
   };
 }

@@ -5,7 +5,7 @@ const React = require('react');
 const { StyleSheet } = require('react-native');
 const F8Button = require('F8Button');
 
-const { logInWithFacebook } = require('./actions');
+const { logInWithFacebook } = require('../actions');
 const { connect } = require('react-redux');
 
 
