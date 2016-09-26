@@ -30,7 +30,7 @@ var NativeModules = require('NativeModules');
 var Dimensions = require('Dimensions');
 
 var F8Header = require('F8Header');
-
+var F8SegmentedControl = require('F8SegmentedControl');
 var ParallaxBackground = require('ParallaxBackground');
 
 var React = require('React');
@@ -65,6 +65,27 @@ type State = {
 };
 
 const EMPTY_CELL_HEIGHT = Dimensions.get('window').height > 600 ? 200 : 150;
+
+class RelayLoading extends React.Component {
+  render() {
+    const child = React.Children.only(this.props.children);
+    if(!child.type.getFragmentNames) {
+      return child;
+    }
+
+    return (
+      <RelayRenderer
+        Container={child.type}
+        queryConfig={new MainRoute()}
+        environment={Relay.Store}
+        render={({props}) => this.renderChild(child, props)}
+      />
+    );
+  }
+
+  
+}
+
 
 class ListContainer extends React.Component {
   props: Props;
@@ -111,7 +132,17 @@ class ListContainer extends React.Component {
     const segments = [];
     const content = React.Children.map(this.props.children, (child, idx) => {
       segments.push(child.props.title);
-
+      return <RelayLoading>{React.cloneElement(child, {
+        ref: (ref) => { this._refs[idx] = ref;},
+        onScroll: (e) => this.handleScroll(idx, e),
+        style: styles.listView,
+        showsVerticalScrollIndicator: false,
+        scrollEventThrottle: 16,
+        contentInset: {bottom: 49, top: 0},
+        automaticallyAdjustContentInsets: false,
+        renderHeader: this.renderFakeHeader,
+        scrollsToTop: idx === this.state.idx,
+      })}</RelayLoading>
     });
 
     let { stickyHeader } = this.props;
@@ -154,14 +185,17 @@ class ListContainer extends React.Component {
             rightItem={this.props.rightItem}
             extraItems={this.props.extraItems}>
             {this.renderHeaderTitle()}
-          </F8Header>       
-          <ViewPager
-            count={segments.length}
-            selectedIndex={this.state.idx}
-            onSelectedIndexChange={this.handleSelectSegment}>
-            {content}
-          </ViewPager>
-        </View>
+          </F8Header>      
+          {this.renderFixedStickyHeader(stickyHeader)}
+        </View> 
+        <ViewPager
+          count={segments.length}
+          selectedIndex={this.state.idx}
+          onSelectedIndexChange={this.handleSelectSegment}>
+          {content}
+        </ViewPager>
+        {this.renderFloatingStickyHeader(stickyHeader)}
+        
       </View>
     )
   }
@@ -207,6 +241,23 @@ class ListContainer extends React.Component {
 
   }
 
+
+  renderFixedStickyHeader(stickyHeader: ?ReactElement) {
+    return Platform.OS === 'ios'
+      ? <View style={{height: this.state.stickyHeaderHeight}} />
+      : stickyHeader;
+  }
+
+  renderFloatingStickyHeader(stickyHeader: ?ReactElement ) {
+    if ( !stickyHeader || Platform.OS !== 'ios') {
+      return;
+    }
+
+    var opacity = this.state.stickyHeaderHeight === 0 ? 0 : 1;
+    var transform;
+
+    
+  }
 
   handleSelectSegment(idx: number) {
 

@@ -23,10 +23,17 @@
  */
 'use strict';
 
+var FilterSessions = require('./filterSessions');
 var Navigator = require('Navigator');
 var React = require('React');
 
+var SessionsSectionHeader = require('./SessionsSectionHeader');
+var PureListView = require('../../common/PureListView');
+
+var groupSessions = require('./groupSessions');
+
 import type { Session } from '../../reducers/sessions';
+import type { SessionsListData } from './groupSessions';
 
 type Props = {
   day: number;
@@ -40,5 +47,64 @@ type State = {
 }
 
 class ScheduleListView extends React.Component {
+  props: Props;
+  state: State;
+  _innerRef: ?PureListView;
+
+  constructor(props: Props) {
+    super(props);
+    this.state = {
+      todaySessions: groupSessions(FilterSessions.byDay(props.sessions, props.day)),
+    };
+
+    this._innerRef = null;
+
+    (this:any).renderSectionHeader = this.renderSectionHeader.bind(this);
+    (this:any).renderRow = this.renderRow.bind(this);
+    (this:any).renderEmptyList = this.renderEmptyList.bind(this);
+    (this:any).storeInnerRef = this.storeInnerRef.bind(this);
+  }
+
+  render() {
+    return (
+      <PureListView 
+        ref={this.storeInnerRef}
+        data={this.state.todaySessions}
+        renderRow={this.renderRow}
+        renderSectionHeader={this.renderSectionHeader}
+        {...(this.props:any)}
+        renderEmptyList={this.renderEmptyList}
+      />
+    );
+  }
+
+  renderSectionHeader(sectionData: any, sectionID: string) {
+    return <SessionsSectionHeader title={sectionID} />;
+  }
+
+  renderRow(session: Session, day: number) {
+    return (
+      <F8SessionCell
+        onPress={() => this.openSession(session, day)}
+        session={session}
+      />
+    );
+  }
+
+  renderEmptyList():?ReactElement {
+
+  }
+
+  openSession(session: Session, dya: number) {
+
+  }
+
+  storeInnerRef(ref: ?PureListView) {
+    this._innerRef = ref;
+  }
+
   
+
 }
+
+module.exports = ScheduleListView;
