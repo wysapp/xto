@@ -66,6 +66,20 @@ type State = {
 
 const EMPTY_CELL_HEIGHT = Dimensions.get('window').height > 600 ? 200 : 150;
 
+var ActivityIndicatorIOS = require('ActivityIndicatorIOS');
+var ProgressBarAndroid = require('ProgressBarAndroid');
+const ActivityIndicator = Platform.OS === 'ios'
+  ? ActivityIndicatorIOS
+  : ProgressBarAndroid;
+
+var Relay = require('react-relay');
+var RelayRenderer = require('react-relay/lib/RelayRenderer.js');
+
+class MainRoute extends Relay.Route{}
+MainRoute.queries = { viewer: () => Relay.QL`query { viewer }` };
+MainRoute.routeName = 'MainRoute';
+
+
 class RelayLoading extends React.Component {
   render() {
     const child = React.Children.only(this.props.children);
@@ -83,7 +97,20 @@ class RelayLoading extends React.Component {
     );
   }
 
-  
+  renderChild(child, props) {
+    if ( !props) {
+      return (
+        <View style={{height: 400}}>
+          {child.props.renderHeader && child.props.renderHeader()}
+          <View style={{flex:1, backgroundColor: 'white', alignItems: 'center', justifyContent: 'center'}}>
+          <ActivityIndicator />
+          </View>
+        </View>
+      );
+    }
+
+    return React.cloneElement(child, {...this.props, ...props});
+  }  
 }
 
 
