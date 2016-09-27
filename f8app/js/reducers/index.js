@@ -16,6 +16,9 @@ module.exports = combineReducers({
   sessions: require('./sessions'),
   user: require('./user'),
 
+  schedule: require('./schedule'),
+  topics: require('./topics'),
+
   filter: require('./filter'),
   navigation: require('./navigation'),
 

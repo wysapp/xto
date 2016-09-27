@@ -26,7 +26,10 @@
 const React = require('React');
 const F8Header = require('F8Header');
 const F8Colors = require('F8Colors');
+const TopicItem = require('./TopicItem');
 const F8Button = require('F8Button');
+
+var ItemsWithSeparator = require('../common/ItemsWithSeparator');
 
 const {
   Animated,
@@ -71,6 +74,75 @@ class FilterScreen extends React.Component {
     (this:any).close = this.close.bind(this);
   }
 
+  render() {
+    var bottom = this.state.anim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [-100, 0],
+    });
+
+    var topics = this.props.topics.map((topic, ii) => (
+      <TopicItem
+        key={topic}
+        topic={topic}
+        color={F8Colors.colorForTopic(this.props.topics.length, ii)}
+        isChecked={this.state.selectedTopics[topic]}
+        onToggle={this.toggleTopic.bind(this, topic)}
+      />
+    ));
+
+    var selectedAnyTopics = this.props.topics.some(
+      (topic) => this.state.selectedTopics[topic]
+    );
+
+    let leftItem, rightItem;
+    if (this.props.navigator) {
+      leftItem = {title: 'Cancel', onPress: this.close};
+    }
+
+    if (selectedAnyTopics) {
+      rightItem = {
+        title: 'Clear',
+        icon: require('../common/img/x-white.png'),
+        onPress: this.clearFilter,
+      };
+    }
+
+    return (
+      <View style={styles.container}>
+        <F8Header
+          title="Filter"
+          leftItem={leftItem}
+          rightItem={rightItem}
+        />
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollview}>
+          <ItemsWithSeparator separatorStyle={styles.separator}>
+            {topics}
+          </ItemsWithSeparator>
+        </ScrollView>
+        <Animated.View style={[styles.applyButton, {bottom}]}>
+          <F8Button
+            caption="Apply filters"
+            onPress={this.applyFilter}
+          />
+        </Animated.View>
+      </View>
+    );
+  }
+
+  toggleTopic(topic: string, value: boolean) {
+    var selectedTopics = { ...this.state.selectedTopics};
+    var value = !selectedTopics[topic];
+    if ( value) {
+      selectedTopics[topic] = true;
+    } else {
+      delete selectedTopics[topic];
+    }
+
+    this.setState({selectedTopics});
+  }
+
   applyFilter() {
 
   }
@@ -95,7 +167,7 @@ var styles = StyleSheet.create({
     paddingBottom: 20 + 49,
   },
   separator: {
-    backgroundColor: '#ffff26',
+    backgroundColor: '#ffffff26',
   },
   applyButton: {
     position: 'absolute',

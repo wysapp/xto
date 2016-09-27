@@ -135,7 +135,11 @@ class GeneralScheduleView extends React.Component {
   }
 
   openFilterScreen() {
-
+    if (Platform.OS === 'ios') {
+      this.props.navigator.push({filter: 123});
+    } else {
+      this._drawer && this._drawer.openDrawer();
+    }
   }
 
   switchDay(page) {

@@ -291,7 +291,7 @@ class ListContainer extends React.Component {
   }
 
   handleShowMenu() {
-
+    this.context.openDrawer();
   }
 }
 
