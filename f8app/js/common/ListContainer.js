@@ -138,6 +138,8 @@ class ListContainer extends React.Component {
       stickyHeaderHeight: 0,
     };
 
+    (this:any).renderFakeHeader = this.renderFakeHeader.bind(this);
+    (this:any).handleStickyHeaderLayout = this.handleStickyHeaderLayout.bind(this);
     (this:any).handleShowMenu = this.handleShowMenu.bind(this);
     (this:any).handleSelectSegment = this.handleSelectSegment.bind(this);
 
@@ -268,6 +270,15 @@ class ListContainer extends React.Component {
 
   }
 
+  renderFakeHeader() {
+    if ( Platform.OS === 'ios') {
+      const height = EMPTY_CELL_HEIGHT - this.state.stickyHeaderHeight;
+      return (
+        <View style={{height}} />
+      );
+    }
+  }
+
 
   renderFixedStickyHeader(stickyHeader: ?ReactElement) {
     return Platform.OS === 'ios'
@@ -283,11 +294,43 @@ class ListContainer extends React.Component {
     var opacity = this.state.stickyHeaderHeight === 0 ? 0 : 1;
     var transform;
 
-    
+    if (!NativeModules.F8Scrolling) {
+      var distance = EMPTY_CELL_HEIGHT + this.state.stickyHeaderHeight;
+      var translateY = this.state.anim.interpolate({
+        inputRange: [0, distance],
+        outputRange: [distance, 0],
+        extrapolateRight: 'clamp',
+      });
+      transform = [{translateY}];
+    }
+
+    return (
+      <Animated.View
+        ref={(ref) => {this._pinned = ref;}}
+        onLayout={this.handleStickyHeaderLayout}
+        style={[styles.stickyHeader, {opacity}, {transform}]}>
+        {stickyHeader}
+      </Animated.View>
+    );    
   }
 
-  handleSelectSegment(idx: number) {
+  handleStickyHeaderLayout({nativeEvent: {layout, target}}: any) {
+    this.setState({stickyHeaderHeight: layout.height});
+  }
 
+  componentWillReceiveProps(nextProps: props) {
+    if (typeof nextProps.selectedSegment === 'number' && nextProps.selectedSegment !== this.state.idx) {
+      this.setState({idx: nextProps.selectedSegment});
+    }
+  }
+
+  
+
+  handleSelectSegment(idx: number) {
+    if ( this.state.idx !== idx) {
+      const { onSegmentChange } = this.props;
+      this.setState({idx}, () => onSegmentChange && onSegmentChange(idx));
+    }
   }
 
   handleShowMenu() {

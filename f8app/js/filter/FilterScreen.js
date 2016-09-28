@@ -74,6 +74,23 @@ class FilterScreen extends React.Component {
     (this:any).close = this.close.bind(this);
   }
 
+  componentWillReceiveProps(nextProps) {
+    if ( this.props.selectedTopics !== nextProps.selectedTopics) {
+      this.setState({selectedTopics: {...nextProps.selectedTopics}});
+    }
+  }
+
+  componentWillUpdate(nextProps, nextState) {
+    if (this.state.selectedTopics !== nextState.selectedTopics) {
+      const changedTopics = !shallowEqual(
+        nextProps.selectedTopics,
+        nextState.selectedTopics,
+      );
+      const toValue = changedTopics ? 1 : 0;
+      Animated.spring(this.state.anim, {toValue}).start();
+    }
+  }
+
   render() {
     var bottom = this.state.anim.interpolate({
       inputRange: [0, 1],
@@ -144,15 +161,22 @@ class FilterScreen extends React.Component {
   }
 
   applyFilter() {
-
+    this.props.dispatch(applyTopicsFilter(this.state.selectedTopics));
+    this.close();
   }
 
   close() {
-
+    const {navigator, onClose } = this.props;
+    if (navigator) {
+      requestAnimationFrame(() => navigator.pop());
+    }
+    if ( onClose) {
+      onClose();
+    }
   }
 
   clearFilter() {
-
+    this.setState({selectedTopics: {}});
   }
 
 }

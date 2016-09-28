@@ -23,6 +23,9 @@
  */
 'use strict';
 
+var EmptySchedule = require('./EmptySchedule');
+var FilterHeader = require('./FilterHeader');
+
 var FilterSessions = require('./filterSessions');
 var ListContainer = require('ListContainer');
 
@@ -131,7 +134,12 @@ class GeneralScheduleView extends React.Component {
   }
 
   renderEmptyList(day: number) {
-
+    return (
+      <EmptySchedule
+        title={`No sessions on day ${day} match the filter`}
+        text="Check the schedule for the other day or remove the filter."
+      />
+    );
   }
 
   openFilterScreen() {
