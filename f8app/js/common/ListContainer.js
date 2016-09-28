@@ -270,6 +270,26 @@ class ListContainer extends React.Component {
 
   }
 
+
+  handleScroll(idx: number, e: any) {
+    if ( idx !== this.state.idx) {
+      return;
+    }
+
+    let y = 0;
+    if ( Platform.OS === 'ios') {
+      this.state.anim.setValue(e.nativeEvent.contentOffset.y);
+      const height = EMPTY_CELL_HEIGHT - this.state.stickyHeaderHeight;
+      y = Math.min(e.nativeEvent.contentOffset.y, height);
+    }
+
+    this._refs.forEach((ref, ii) => {
+      if ( ii !== idx && ref) {
+        ref.scrollTo && ref.scrollTo({y, animated: false});
+      }
+    });
+  }
+
   renderFakeHeader() {
     if ( Platform.OS === 'ios') {
       const height = EMPTY_CELL_HEIGHT - this.state.stickyHeaderHeight;
@@ -321,6 +341,33 @@ class ListContainer extends React.Component {
   componentWillReceiveProps(nextProps: props) {
     if (typeof nextProps.selectedSegment === 'number' && nextProps.selectedSegment !== this.state.idx) {
       this.setState({idx: nextProps.selectedSegment});
+    }
+  }
+
+  componentDidUpdate(prevProps: Props, prevState: State) {
+    if ( !NativeModules.F8Scrolling) {
+      return;
+    }
+
+    if (this.state.idx !== prevState.idx ||
+      this.state.stickyHeaderHeight !== prevState.stickyHeaderHeight) {
+      var distance = EMPTY_CELL_HEIGHT - this.state.stickyHeaderHeight;
+      
+      if (this._refs[prevState.idx] && this._refs[prevState.idx].getScrollResponder) {
+        const oldScrollViewTag = ReactNative.findNodeHandle(
+          this._refs[prevState.idx].getScrollResponder()
+        );
+
+        NativeModules.F8Scrolling.unpin(oldScrollViewTag);
+      }
+
+      if ( this._refs[this.state.idx] && this._refs[this.state.idx].getScrollResponder) {
+        const newScrollViewTag = ReactNative.findNodeHandle(
+          this._refs[this.state.idx].getScrollResponder()
+        );
+        const pinnedViewTag = ReactNative.findNodeHandle(this._pinned);
+        NativeModules.F8Scrolling.pin(newScrollViewTag, pinnedViewTag, distance);
+      }
     }
   }
 

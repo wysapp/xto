@@ -65,6 +65,14 @@ class ScheduleListView extends React.Component {
     (this:any).storeInnerRef = this.storeInnerRef.bind(this);
   }
 
+  componentWillReceiveProps(nextProps: Props) {
+    if (nextProps.sessions !== this.props.sessions || nextProps.day !== this.props.day){
+      this.setState({
+        todaySessions: groupSessions(FilterSessions.byDay(nextProps.sessions, nextProps.day)),
+      });
+    }
+  }
+
   render() {
     return (
       <PureListView 
@@ -92,7 +100,8 @@ class ScheduleListView extends React.Component {
   }
 
   renderEmptyList():?ReactElement {
-
+    const { renderEmptyList } = this.props;
+    return renderEmptyList && renderEmptyList(this.props.day);
   }
 
   openSession(session: Session, dya: number) {
