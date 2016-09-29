@@ -134,6 +134,7 @@ class GeneralScheduleView extends React.Component {
   }
 
   renderEmptyList(day: number) {
+    
     return (
       <EmptySchedule
         title={`No sessions on day ${day} match the filter`}
@@ -150,7 +151,7 @@ class GeneralScheduleView extends React.Component {
     }
   }
 
-  switchDay(page) {
+  switchDay(page) {    
     this.props.switchDay(page + 1);
   }
 

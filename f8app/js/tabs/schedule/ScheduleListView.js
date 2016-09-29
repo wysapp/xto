@@ -74,6 +74,8 @@ class ScheduleListView extends React.Component {
   }
 
   render() {
+
+    
     return (
       <PureListView 
         ref={this.storeInnerRef}

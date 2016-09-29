@@ -221,6 +221,7 @@ class F8TabsView extends React.Component {
 
 
   render() {
+    
     return (
       <F8DrawerLayout
         ref="drawer"
@@ -237,7 +238,7 @@ class F8TabsView extends React.Component {
 
 F8TabsView.childContextTypes = {
   openDrawer: React.PropTypes.func,
-  hasUnreadNotifications: React.PropTypes.boolean,
+  hasUnreadNotifications: React.PropTypes.bool,
 };
 
 function select(store) {
