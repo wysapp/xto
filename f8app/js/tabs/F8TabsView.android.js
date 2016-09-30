@@ -25,7 +25,7 @@
 
 'use strict';
 
-// var F8InfoView = require('F8InfoView');
+var F8InfoView = require('F8InfoView');
 var F8Colors = require('F8Colors');
 var F8MapView = require('F8MapView');
 
@@ -214,6 +214,9 @@ class F8TabsView extends React.Component {
       
       case 'notifications':
         return <F8NotificationsView navigator={this.props.navigator} />;
+      
+      case 'info':
+        return <F8InfoView navigator={this.props.navigator} />;
     }
 
     throw new Error(`Unknown tab ${this.props.tab}`);
