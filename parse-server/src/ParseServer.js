@@ -17,6 +17,8 @@ import Config from './Config';
 
 import requiredParameter from './requiredParameter';
 
+import { ClassesRouter } from './Routers/ClassesRouter';
+
 import { InMemoryCacheAdapter } from './Adapters/Cache/InMemoryCacheAdapter';
 import { AnalyticsController } from './Controllers/AnalyticsController';
 import { CacheController } from './Controllers/CacheController';
@@ -298,12 +300,12 @@ class ParseServer {
 
     api.use(bodyParser.json({'type': '*/*', limit: maxUploadSize}));
     api.use(middlewares.allowCrossDomain);
-    // api.use(middlewares.allowMethodOverride);
-    // api.use(middlewares.handleParseHeaders);
+    api.use(middlewares.allowMethodOverride);
+    api.use(middlewares.handleParseHeaders);
 
-    // const appRouter = ParseServer.promiseRouter({appId});
+    const appRouter = ParseServer.promiseRouter({appId});
 
-    // api.use(appRouter.expressRouter());
+    api.use(appRouter.expressRouter());
 
     api.use(middlewares.handleParseErrors);
 
@@ -327,6 +329,22 @@ class ParseServer {
 
 
     return api;
+  }
+
+  static promiseRouter({appId}) {
+    const routers = [
+      new ClassesRouter(),
+    ];
+
+    const routes = routers.reduce((memo, router) => {
+      return memo.concat(router.routes);
+    },[]);
+
+    const appRouter = new PromiseRouter(routes, appId);
+
+    batch.mountOnto(appRouter);
+
+    return appRouter;
   }
 }
 

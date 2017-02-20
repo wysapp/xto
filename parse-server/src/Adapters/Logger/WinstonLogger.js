@@ -35,6 +35,13 @@ function updateTransports(options) {
         name: 'console',
         silent
       }, options));
+
+    transports['console-verbose'] = new (winston.transports.Console)(
+      Object.assign({
+        colorize: true,
+        name: 'console-verbose',
+        silent
+      }, options, {level: 'verbose', timestamp: true}));
   }
   // Mount the additional transports
   additionalTransports.forEach((transport) => {

@@ -12,6 +12,20 @@ import {inspect} from 'util';
 
 const Layer = require('express/lib/router/layer');
 
+function validateParameter(key, value) {
+  if (key == 'className') {
+    if (value.match(/_?[A-Za-z][A-Za-z_0-9]*/)) {
+      return value;
+    }
+  } else if (key == 'objectId') {
+    if (value.match(/[A-Za-z0-9]+/)) {
+      return value;
+    }
+  } else {
+    return value;
+  }
+}
+
 export default class PromiseRouter {
   constructor(routes = [], appId) {
     this.routes = routes;
@@ -52,6 +66,32 @@ export default class PromiseRouter {
     });
   }
 
+
+  // Returns an object with:
+  //   handler: the handler that should deal with this request
+  //   params: any :-params that got parsed from the path
+  // Returns undefined if there is no match.
+  match(method, path) {
+    for (var route of this.routes) {
+      if (route.method != method) {
+        continue;
+      }
+
+      const layer = route.layer || new Layer(route.path, null, route.handler);
+      const match = layer.match(path);
+
+      if (match) {
+        const params = layer.params;
+        Object.keys(params).forEach((key) => {
+          params[key] = validateParameter(key, params[key]);
+        });
+
+        return {params: params, handler: route.handler};
+      }
+    }
+  }
+
+
   mountOnto(expressApp) {
     this.routes.forEach((route) => {
       const method = route.method.toLowerCase();
@@ -65,6 +105,21 @@ export default class PromiseRouter {
 
   expressRouter() {
     return this.mountOnto(express.Router());
+  }
+
+  tryRouteRequest(method, path, request) {
+    var match = this.match(method, path);
+    if (!match) {
+      throw new Parse.Error(
+        Parse.Error.INVALID_JSON,
+        'cannot route ' + method + ' ' + path
+      );
+    }
+
+    request.params = match.params;
+    return new Promise((resolve, reject) => {
+      match.handler(request).then(resolve, reject);
+    });
   }
 
 }
