@@ -2,8 +2,9 @@ import AppCache from './cache';
 import log from './logger';
 
 import Parse from 'parse/node';
-
+import auth from './Auth';
 import Config from './Config';
+import ClientSDK from './ClientSDK';
 
 // Checks that the request is authorized for this app and checks user
 // auth too.
@@ -268,6 +269,18 @@ export function enforceMasterKeyAccess(req, res, next) {
     return;
   }
   next();
+}
+
+
+export function promiseEnforceMasterKeyAccess(request){
+  if (!request.auth.isMaster) {
+    const error = new Error();
+    error.status = 403;
+    error.message = "unauthorized: master key is required";
+    throw error;
+  }
+
+  return Promise.resolve();
 }
 
 function invalidRequest(req, res) {

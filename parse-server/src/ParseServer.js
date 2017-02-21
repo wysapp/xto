@@ -14,10 +14,12 @@ import defaults from './defaults';
 import * as logging from './logger';
 import AppCache from './cache';
 import Config from './Config';
+import PromiseRouter from './PromiseRouter';
 
 import requiredParameter from './requiredParameter';
 
 import { ClassesRouter } from './Routers/ClassesRouter';
+import { FeaturesRouter } from './Routers/FeaturesRouter';
 
 import { InMemoryCacheAdapter } from './Adapters/Cache/InMemoryCacheAdapter';
 import { AnalyticsController } from './Controllers/AnalyticsController';
@@ -334,6 +336,7 @@ class ParseServer {
   static promiseRouter({appId}) {
     const routers = [
       new ClassesRouter(),
+      new FeaturesRouter(),
     ];
 
     const routes = routers.reduce((memo, router) => {

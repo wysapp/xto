@@ -6,10 +6,22 @@ import AppCache from './cache';
 import SchemaCache from './Controllers/SchemaCache';
 import DatabaseController from './Controllers/DatabaseController';
 
+function removeTrailingSlash(str) {
+  if (!str) {
+    return str;
+  }
+  if (str.endsWith('/')) {
+    str = str.substr(0, str.length - 1);
+  }
+  return str;
+}
+
+
 export class Config {
+  
   constructor(applicationId: string, mount: string) {
     const cacheInfo = AppCache.get(applicationId);
-    if (!cacheInfo){
+    if (!cacheInfo) {
       return;
     }
 
@@ -25,11 +37,10 @@ export class Config {
     this.allowClientClassCreation = cacheInfo.allowClientClassCreation;
     this.userSensitiveFields = cacheInfo.userSensitiveFields;
 
+    // Create a new DatabaseController per request
     if (cacheInfo.databaseController) {
       const schemaCache = new SchemaCache(cacheInfo.cacheController, cacheInfo.schemaCacheTTL, cacheInfo.enableSingleSchemaCache);
-
       this.database = new DatabaseController(cacheInfo.databaseController.adapter, schemaCache);
-      
     }
 
     this.schemaCacheTTL = cacheInfo.schemaCacheTTL;
@@ -61,8 +72,8 @@ export class Config {
     this.sessionLength = cacheInfo.sessionLength;
     this.expireInactiveSessions = cacheInfo.expireInactiveSessions;
     this.generateSessionExpiresAt = this.generateSessionExpiresAt.bind(this);
+    this.generateEmailVerifyTokenExpiresAt = this.generateEmailVerifyTokenExpiresAt.bind(this);
     this.revokeSessionOnPasswordReset = cacheInfo.revokeSessionOnPasswordReset;
-
   }
 
   static validate({
@@ -166,6 +177,26 @@ export class Config {
         throw 'Session length must be a value greater than 0.'
       }
     }
+  }
+
+  generateEmailVerifyTokenExpiresAt(){
+    if (!this.verifyUserEmails || !this.emailVerifyTokenValidityDuration) {
+      return undefined;
+    }
+    var now = new Date();
+    return new Date(now.getTime() + (this.emailVerifyTokenValidityDuration * 1000));
+  }
+
+  
+
+
+  generateSessionExpiresAt() {
+    if (!this.expireInactiveSessions) {
+      return undefined;
+    }
+
+    var now = new Date();
+    return new Date(now.getTime() + (this.sessionLength * 1000));
   }
 
 }

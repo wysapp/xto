@@ -27,7 +27,7 @@ function initialize(app) {
       });
       if (!match.matchingUsername) {
         return cb(null, false, { message: 'Invalid username or password' });
-      }
+      }      
       cb(null, match.matchingUsername);
     })
   );

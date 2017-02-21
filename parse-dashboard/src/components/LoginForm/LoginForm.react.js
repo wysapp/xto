@@ -9,6 +9,7 @@
 import React from 'react';
 import styles from 'components/LoginForm/LoginForm.scss';
 import Icon from 'components/Icon/Icon.react';
+import CSRFInput from 'components/CSRFInput/CSRFInput.react';
 import PropTypes from 'lib/PropTypes';
 import {verticalCenter} from 'stylesheets/base.scss';
 
@@ -20,7 +21,7 @@ export default class LoginForm extends React.Component {
       <div className={styles.login} style={{marginTop: this.props.marginTop || '-220px' }}>
         <Icon width={80} height={80} name="infinity" fill="#093A59" />
         <form method="post" ref="form" action={this.props.endpoint} className={styles.form}>
-
+          <CSRFInput />
           <div className={styles.header}>
             {this.props.header}
           </div>
