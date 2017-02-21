@@ -7,8 +7,19 @@
  */
 
 import React from 'react';
-import {Router, Route, Redirect} from 'react-router';
 import Parse from 'parse';
+import {Router, Route, Redirect, useRouterHistory} from 'react-router';
+
+import history from 'dashboard/history';
+import AppData from './AppData.react';
+import AccountView from './AccountView.react';
+
+import AppsIndex from './Apps/AppsIndex.react';
+
+import Loader from 'components/Loader/Loader.react';
+import Icon from 'components/Icon/Icon.react';
+
+import Browser from './Data/Browser/Browser.react';
 
 import AppsManager from 'lib/AppsManager';
 import ParseApp from 'lib/ParseApp';
@@ -16,6 +27,8 @@ import {setBasePath} from 'lib/AJAX';
 import {get} from 'lib/AJAX';
 import {AsyncStatus} from 'lib/Constants';
 
+import styles from 'dashboard/Apps/AppsIndex.scss';
+import { center } from 'stylesheets/base.scss';
 
 let App = React.createClass({
   render(){
@@ -91,8 +104,7 @@ class Dashboard extends React.Component {
             'serverInfo',
             {},
             { useMasterKey: true }
-          ).then(serverInfo => {
-            
+          ).then(serverInfo => {            
             app.serverInfo = serverInfo;
             return app;
           }, error => {
@@ -125,10 +137,12 @@ class Dashboard extends React.Component {
       return Parse.Promise.when(appInfoPromises);
     }).then(function(){
       Array.prototype.slice.call(arguments).forEach(app => {
+        
         AppsManager.addApp(app);
       });
       this.setState({configLoadingState: AsyncStatus.SUCCESS});
     }.bind(this)).fail(({error}) => {
+      
       this.setState({
         configLoadingError: error,
         configLoadingState: AsyncStatus.FAILED
@@ -142,9 +156,40 @@ class Dashboard extends React.Component {
       return <div className={center}><Loader /></div>;
     }
 
-    return (
-      <div>iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii</div>
-    )
+    if (this.state.configLoadingError && this.state.configLoadingError.length > 0) {
+      return <div className={styles.empty}>
+          <div className={center}>
+            <div className={styles.cloud}>
+              <Icon width={110} height={110} name="cloud-surprise" fill="#1e3b4d" />
+            </div>
+
+            <div className={styles.loadingError}>
+              {this.state.configLoadingError.replace(/-/g, '\u2011')}
+            </div>
+          </div>
+        </div>;
+    }
+
+    const AppsIndexPage = () => (
+      <AccountView section="Your Apps">
+        <AppsIndex newFeaturesInLatestVersion={this.state.newFeaturesInLatestVersion} />
+      </AccountView>
+    );
+
+    return <Router history={history}>
+      <Redirect from="/" to="/apps" />
+      <Route path="/" component={App}>
+        <Route path="apps" component={AppsIndexPage} />
+
+        <Redirect from="apps/:appId" to="/apps/:appId/browser" />
+        <Route path="apps/:appId" component={AppData}>
+          <Route path="getting_started" component={Empty} />
+          <Route path="browser" component={false ? SchemaOverview : Browser} />
+        </Route>
+
+
+      </Route>
+    </Router>
   }
 }
 

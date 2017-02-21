@@ -1,0 +1,193 @@
+/*
+ * Copyright (c) 2016-present, Parse, LLC
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ */
+@import 'stylesheets/globals.scss';
+
+
+.sidebar {
+  position: fixed;
+  width: 300px;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  background: #0c5582;
+  color: #ffffff;
+  transition: left 0.5s ease-in;
+}
+
+.toggle {
+  position: fixed;
+  border-radius: 5px;
+  width: 28px;
+  height: 28px;
+  top: 10px;
+  left: 310px;
+  opacity: 0;
+  transition: left 0.5s ease-in, opacity 0.5s 0.5s ease-in;
+}
+
+@media (max-width: 980px) {
+  .sidebar {
+    left: 0;
+  }
+
+  .toggle {
+    left: 310px;
+    top: 10px;
+    opacity: 1;
+  }
+
+  body:global(.expanded) {
+    .sidebar {
+      left: -300px;
+    }
+
+    .toggle {
+      left: 10px;
+    }
+  }
+}
+
+
+.content {
+  position: absolute;
+  overflow-y: auto;
+  top: 48px;
+  right: 0;
+  bottom: 36px;
+  left: 0;
+}
+
+.footer {
+  @include NotoSansFont;
+  position: absolute;
+  background: #05283c;
+  height: 36px;
+  line-height: 36px;
+  padding: 9px 0;
+  text-align: center;
+  bottom: 0;
+  left: 0;
+  right: 0;
+
+  a {
+    color: white;
+    text-decoration: none;
+    border-right: 1px solid #385261;
+    height: 18px;
+    line-height: 18px;
+    font-size: 13px;
+    padding: 0 12px;
+    vertical-align: top;
+
+    &:first-child {
+      padding-left: 0;
+    }
+
+    &:last-child {
+      padding-right: 0;
+      border:none;
+    }
+  }
+
+  svg {
+    margin-top: -2px;
+  }
+}
+
+
+.header {
+  background: #05283c;
+  height: 48px;
+  padding: 10px 14px;
+
+  :global(.icon) {
+    width: 28px;
+    height: 28px;
+    float: left;
+  }
+
+}
+
+
+.section {
+  background: #0c5582;
+
+  :global(.icon) {
+    margin-right: 14px;
+  }
+}
+
+
+.active {
+  background: #159cee;
+
+  .section_header {
+    font-weight: 700;
+    &:hover {
+      background: #159cee;
+    }
+  }
+}
+
+
+.section_header {
+  display: block;
+  height: 48px;
+  font-size: 18px;
+  line-height: 28px;
+  padding: 12px 14px;
+  color: white;
+
+  &:hover{
+    background-color: #0D5E91;
+  }
+
+  > span {
+    vertical-align: top;
+  }
+
+  > svg {
+    margin-right: 14px;
+  }
+}
+
+
+.section_contents {
+  background: #0e69a0;
+  padding: 16px 14px 16px 50px;
+}
+
+
+.logo {
+  float: left;
+}
+
+.version {
+  @include DosisFont;
+  position: relative;
+  width: 75px;
+  height: 100%;
+  font-size: 10px;
+  float: left;
+  margin-left: 6px;
+  white-space: nowrap;
+  color: white;
+
+  > *:first-child {
+    position: absolute;
+    letter-spacing: 2px;
+    line-height: 10px;
+    text-transform: uppercase;
+  }
+
+  > *:first-child {
+    top: 10px;
+    transition: all 0.4s 0.16s cubic-bezier(0.77, 0, 0.175, 1);
+  }
+}
+
