@@ -22,10 +22,41 @@ export default class SchemaCache {
     }
   }
 
+  put(key, value) {
+    return this.cache.get(this.prefix + ALL_KEYS).then((allKeys) => {
+      allKeys = allKeys || {};
+      allKeys[key] = true;
+
+      return Promise.all([this.cache.put(this.prefix + ALL_KEYS, allKeys, this.ttl), this.cache.put(key, value, this.ttl)]);
+    });
+  }
+
   getAllClasses() {
     if (!this.ttl) {
       return Promise.resolve(null);
     }
     return this.cache.get(this.prefix + MAIN_SCHEMA);
+  }
+
+
+  setAllClasses(schema) {
+    if (!this.ttl) {
+      return Promise.resolve();
+    }
+
+    return this.put(this.prefix + MAIN_SCHEMA, schema);
+  }
+
+  clear() {
+    return this.cache.get(this.prefix + ALL_KEYS).then((allKeys) => {
+      if (!allKeys) {
+        return;
+      }
+
+      const promises = Object.keys(allKeys).map((key) => {
+        return this.cache.del(key);
+      });
+      return Promise.all(promises);
+    })
   }
 }

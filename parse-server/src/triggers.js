@@ -34,6 +34,10 @@ export function getTrigger(className, triggerType, applicationId) {
 }
 
 
+export function triggerExists(className: string, type: string, applicationId: string): boolean {
+  return (getTrigger(className, type, applicationId) != undefined);
+}
+
 export function getRequestQueryObject(triggerType, auth, query, config) {
   var request = {
     triggerName: triggerType,
@@ -56,6 +60,8 @@ export function getRequestQueryObject(triggerType, auth, query, config) {
   }
   return request;
 }
+
+
 
 export function maybeRunQueryTrigger(triggerType, className, restWhere, restOptions, config, auth) {
   const trigger = getTrigger(className, triggerType, config.applicationId);

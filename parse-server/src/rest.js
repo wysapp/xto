@@ -16,7 +16,7 @@ var triggers = require('./triggers');
 function find(config, auth, className, restWhere, restOptions, clientSDK) {
   enforceRoleSecurity('find', className, auth);
 
-  return triggers.maybeRunQueryTrigger(triggers.Types.beforeFind, className, restWhere, restOptions, config.auth).then((result) => {
+  return triggers.maybeRunQueryTrigger(triggers.Types.beforeFind, className, restWhere, restOptions, config, auth).then((result) => {
     restWhere = result.restWhere || restWhere;
     restOptions = result.restOptions || restOptions;
 
@@ -35,3 +35,8 @@ function enforceRoleSecurity(method, className, auth) {
     }
   }
 }
+
+
+module.exports = {
+  find,
+};

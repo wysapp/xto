@@ -19,7 +19,7 @@ const MongoSchemaCollectionName = '_SCHEMA';
 
 export class MongoStorageAdapter {
   // Private
-  _url: string;
+  _uri: string;
   _collectionPrefix: string;
   _mongoOptions: Object;
 
@@ -45,8 +45,35 @@ export class MongoStorageAdapter {
       return this.connectionPromise;
     }
 
-    const encodedUri = formatUrl(parseUrl(this._url));
+    const encodedUri = formatUrl(parseUrl(this._uri));
+    this.connectionPromise = MongoClient.connect(encodedUri, this._mongoOptions).then(database => {
+      if (!database) {
+        delete this.connectionPromise;
+        return;
+      }
 
+      database.on('error', () => {
+        delete this.connectionPromise;
+      });
+
+      database.on('close', () => {
+        delete this.connectionPromise;
+      });
+
+      this.database = database;
+    }).catch((err) => {
+      delete this.connectionPromise;
+      return Promise.reject(err);
+    });
+
+    return this.connectionPromise;
+
+  }
+
+  _adaptiveCollection(name: string) {
+    return this.connect()
+      .then(() => this.database.collection(this._collectionPrefix + name))
+      .then(rawCollection => new MongoCollection(rawCollection));
   }
 
   _schemaCollection() {
@@ -62,6 +89,8 @@ export class MongoStorageAdapter {
   getAllClasses() {
     return this._schemaCollection().then(schemasCollection => schemasCollection._fetchAllSchemasFrom_SCHEMA());
   }
+
+
 
 }
 
