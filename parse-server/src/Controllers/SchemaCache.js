@@ -21,4 +21,11 @@ export default class SchemaCache {
       this.prefix += randomString(20);
     }
   }
+
+  getAllClasses() {
+    if (!this.ttl) {
+      return Promise.resolve(null);
+    }
+    return this.cache.get(this.prefix + MAIN_SCHEMA);
+  }
 }

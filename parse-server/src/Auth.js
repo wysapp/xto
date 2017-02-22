@@ -28,6 +28,26 @@ function nobody(config) {
 }
 
 
+Auth.prototype.getUserRoles = function(){
+  if (this.isMaster || !this.user) {
+    return Promise.resolve([]);
+  }
+
+  if (this.fetchedRoles) {
+    return Promise.resolve(this.userRoles);
+  }
+
+  if (this.rolePromise) {
+    return this.rolePromise;
+  }
+
+  this.rolePromise = this._loadRoles();
+  return this.rolePromise;
+
+}
+
+
+
 module.exports = {
   Auth,
   master,

@@ -40,6 +40,29 @@ export class MongoStorageAdapter {
     this._maxTimeMS = mongoOptions.maxTimeMS;
   }
 
+  connect() {
+    if (this.connectionPromise) {
+      return this.connectionPromise;
+    }
+
+    const encodedUri = formatUrl(parseUrl(this._url));
+
+  }
+
+  _schemaCollection() {
+    return this.connect() 
+      .then(() => this._adaptiveCollection(MongoSchemaCollectionName))
+      .then(collection => new MongoSchemaCollection(collection));
+  }
+
+
+  // Return a promise for all schemas known to this adapter, in Parse format. In case the
+  // schemas cannot be retrieved, returns a promise that rejects. Requirements for the
+  // rejection reason are TBD.
+  getAllClasses() {
+    return this._schemaCollection().then(schemasCollection => schemasCollection._fetchAllSchemasFrom_SCHEMA());
+  }
+
 }
 
 

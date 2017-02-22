@@ -80,4 +80,21 @@ export default class ParseApp {
     return Parse._request(method, path, params, options);
   }
 
+  getClassCount(className) {
+    this.setParseKeys();
+    if (this.classCounts.counts[className] !== undefined) {
+      if (new Date() - this.classCounts.lastFetched[className] < 60000) {
+        return Parse.Promise.as(this.classCounts.counts[className]);
+      }
+    }
+
+    let p = new Parse.Query(className).count({useMasterKey: true});
+    p.then(count => {
+      this.classCounts.counts[className] = count;
+      this.classCounts.lastFetched[className] = new Date();
+    })
+
+    return p;
+  }
+
 }
