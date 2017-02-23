@@ -8,7 +8,8 @@
 import React from 'react';
 import SidebarHeader from 'components/Sidebar/SidebarHeader.react';
 import SidebarSection from 'components/Sidebar/SidebarSection.react';
-import SidebarSumItem from 'components/Sidebar/SidebarSubItem.react';
+import SidebarSubItem from 'components/Sidebar/SidebarSubItem.react';
+import AppsSelector from 'components/Sidebar/AppsSelector.react';
 import AppsManager from 'lib/AppsManager';
 import styles from 'components/Sidebar/Sidebar.scss';
 
@@ -52,6 +53,7 @@ const Sidebar = ({
 
   return <div className={styles.sidebar}>
     <SidebarHeader />
+    {appSelector ? <AppsSelector apps={apps} /> : null}
     <div className={styles.content}>
       {sections.map(({
         name,

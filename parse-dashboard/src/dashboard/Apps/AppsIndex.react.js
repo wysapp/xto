@@ -61,8 +61,8 @@ let AppCard = ({app, icon}) => {
     </div>
     <CountsSection className={styles.glance} title="At a glance">
       <AppBadge production={app.production} />
-      <Metric number={10} label="total users" />
-      <Metric number={20} label="total installations" />
+      <Metric number={app.users} label="total users" />
+      <Metric number={app.installations} label="total installations" />
     </CountsSection>
   </li>
 }

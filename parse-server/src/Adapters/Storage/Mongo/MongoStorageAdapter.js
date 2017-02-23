@@ -109,6 +109,12 @@ export class MongoStorageAdapter {
     return this._schemaCollection().then(schemasCollection => schemasCollection._fetchAllSchemasFrom_SCHEMA());
   }
 
+
+  getClass(className) {
+    return this._schemaCollection()
+    .then(schemasCollection => schemasCollection._fechOneSchemaFrom_SCHEMA(className));
+  }
+
   count(className, schema, query) {
     schema = converParseSchemaToMongoSchema(schema);
     return this._adaptiveCollection(className)
