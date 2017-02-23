@@ -47,6 +47,38 @@ export default class SchemaCache {
     return this.put(this.prefix + MAIN_SCHEMA, schema);
   }
 
+  setOneSchema(className, schema) {
+    if (!this.ttl) {
+      return Promise.resolve(null);
+    }
+    return this.put(this.prefix + className, schema);
+  }
+
+
+  getOneSchema(className) {
+    if (!this.ttl) {
+      return Promise.resolve(null);
+    }
+
+    return this.cache.get(this.prefix + className).then((schema) => {
+      if (schema) {
+        return Promise.resolve(schema);
+      }
+
+      return this.cache.get(this.prefix + MAIN_SCHEMA).then((cachedSchemas) => {
+        cachedSchemas = cachedSchemas || [];
+        schema = cachedSchemas.find((cachedSchema) => {
+          return cachedSchema.className === className;
+        });
+
+        if (schema) {
+          return Promise.resolve(schema);
+        } 
+        return Promise.resolve(null);
+      });
+    });
+  }
+
   clear() {
     return this.cache.get(this.prefix + ALL_KEYS).then((allKeys) => {
       if (!allKeys) {

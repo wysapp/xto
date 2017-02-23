@@ -111,6 +111,25 @@ const defaultColumns = Object.freeze({
 
 const systemClasses = Object.freeze(['_User', '_Installation', '_Role', '_Session', '_Product', '_PushStatus', '_JobStatus']);
 
+
+const volatileClasses = Object.freeze(['_JobStatus', '_PushStatus', '_Hooks', '_GlobalConfig']);
+
+const joinClassRegex = /^_Join:[A-Za-z0-9_]+:[A-Za-z0-9_]+/;
+const classAndFieldRegex = /^[A-Za-z][A-Za-z0-9_]*$/;
+
+
+function classNameIsValid(className) {
+  return (
+    systemClasses.indexOf(className) > -1 ||
+    joinClassRegex.test(className) ||
+    fieldNameIsValid(className)
+  );
+}
+
+function fieldNameIsValid(fieldName) {
+  return classAndFieldRegex.test(fieldName);
+}
+
 const injectDefaultSchema = ({className, fields, classLevelPermissions}) => ({
   className,
   fields: {
@@ -192,6 +211,37 @@ export default class SchemaController {
     });
   }
 
+  getOneSchema(className, allowVolatileClasses = false, options = {clearCache: false}) {
+    let promise = Promise.resolve();
+    if (options.clearCache) {
+      promise = this._cache.clear();
+    }
+
+    return promise.then(() => {
+      if (allowVolatileClasses && volatileClasses.indexOf(className) > -1) {
+        return Promise.resolve({
+          className,
+          fields: this.data[className],
+          classLevelPermissions: this.perms[className]
+        });
+      }
+
+      return this._cache.getOneSchema(className).then((cached) =>{
+        if (cached && !options.clearCache) {
+          return Promise.resolve(cached);
+        }
+
+        return this._dbAdapter.getClass(className)
+        .then(injectDefaultSchema)
+        .then((result) => {
+          return this._cache.setOneSchema(className, result).then(() => {
+            return result;
+          })
+        });
+      });
+    });
+  }
+
 
   // Returns the expected type for a className+key combination
   // or undefined if the schema is not set
@@ -218,4 +268,9 @@ const load = (dbAdapter, schemaCache, options) => {
 
 export {
   load,
+  classNameIsValid,
+  fieldNameIsValid,
+
+  systemClasses,
+  defaultColumns,
 }

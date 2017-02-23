@@ -7,6 +7,10 @@ import {
 } from '../../../vendor/mongodbUrl';
 
 
+import {
+  transformWhere
+} from './MongoTransform';
+
 import Parse from 'parse/node';
 import _ from 'lodash';
 import defaults from '../../../defaults';
@@ -16,6 +20,21 @@ const MongoClient = mongodb.MongoClient;
 
 const MongoSchemaCollectionName = '_SCHEMA';
 
+
+const converParseSchemaToMongoSchema = ({...schema}) => {
+  delete schema.fields._rperm;
+  delete schema.fields._wperm;
+
+  if (schema.className === '_User') {
+    // Legacy mongo adapter knows about the difference between password and _hashed_password.
+    // Future database adapters will only know about _hashed_password.
+    // Note: Parse Server will bring back password with injectDefaultSchema, so we don't need
+    // to add _hashed_password back ever.
+    delete schema.fields._hashed_password;
+  }
+
+  return schema;
+}
 
 export class MongoStorageAdapter {
   // Private
@@ -90,7 +109,13 @@ export class MongoStorageAdapter {
     return this._schemaCollection().then(schemasCollection => schemasCollection._fetchAllSchemasFrom_SCHEMA());
   }
 
-
+  count(className, schema, query) {
+    schema = converParseSchemaToMongoSchema(schema);
+    return this._adaptiveCollection(className)
+    .then(collection => collection.count(transformWhere(className, query, schema), {
+      maxTimeMS: this._maxTimeMS
+    }));
+  }
 
 }
 
