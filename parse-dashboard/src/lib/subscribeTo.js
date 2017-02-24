@@ -5,13 +5,13 @@
  * This source code is licensed under the license found in the LICENSE file in
  * the root directory of this source tree.
  */
-
-import React from 'react';
 import ParseApp from 'lib/ParseApp';
+import React from 'react';
+import * as StoreManager from 'lib/stores/StoreManager';
 
 export default function subscribeTo(name, prop) {
   return function(Component) {
-
+    const store = StoreManager.getStore(name);
     const displayName = Component.displayName || Component.name || 'Component';
 
     class SubscribedComponent extends React.Component {
@@ -20,13 +20,42 @@ export default function subscribeTo(name, prop) {
         super(props, context);
 
         this.state = {
-          data: []
+          data: store.getData(context.currentApp)
         };
       }
 
+      handleNewData(data) {
+        if (this.state.data !== data) {
+          this.setState({ data });
+        }
+      }
+
+      componentWillReceiveProps(nextProps, nextContext) {
+        this.setState({ data: store.getData(nextContext.currentApp) });
+      }
+
+      componentWillMount() {
+        this.subscriptionId = store.subscribe(this.handleNewData.bind(this));
+      }
+
+      componentWillUnmount() {
+        store.unsubscribe(this.subscriptionId);
+      }
+
       render() {
-        console.log('222222222222222222-SubscribedComponent', this.props);
-        return <Component {...this.props} />;
+        let dispatch = (type, params={}) => {
+          if (store.isGlobal) {
+            return store.dispatch(type, params);
+          }
+          return store.dispatch(type, params, this.context.currentApp);
+        };
+        let extras = {
+          [prop]: {
+            data: this.state.data,
+            dispatch: dispatch,
+          }
+        };
+        return <Component {...this.props} {...extras} />;
       }
     }
 
@@ -36,9 +65,9 @@ export default function subscribeTo(name, prop) {
       generatePath: React.PropTypes.func,
     };
 
+    // In case you need to add static properties to the original Component
     SubscribedComponent.original = Component;
 
     return SubscribedComponent;
-
   }
 }

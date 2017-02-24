@@ -6,7 +6,7 @@
  * the root directory of this source tree.
  */
 import React from 'react';
-
+import { ActionTypes } from 'lib/stores/SchemaStore';
 import DashboardView from 'dashboard/DashboardView.react';
 
 import SidebarAction from 'components/Sidebar/SidebarAction';
@@ -25,6 +25,10 @@ export default class Browser extends DashboardView {
     this.subsection = 'Browser';
     this.action = new SidebarAction('Create a class', this.showCreateClass.bind(this));
     
+  }
+
+  componentWillMount() {
+    this.props.schema.dispatch(ActionTypes.FETCH);
   }
 
   showCreateClass() {

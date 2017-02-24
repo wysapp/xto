@@ -10,6 +10,7 @@ import SidebarHeader from 'components/Sidebar/SidebarHeader.react';
 import SidebarSection from 'components/Sidebar/SidebarSection.react';
 import SidebarSubItem from 'components/Sidebar/SidebarSubItem.react';
 import AppsSelector from 'components/Sidebar/AppsSelector.react';
+import FooterMenu from 'components/Sidebar/FooterMenu.react';
 import AppsManager from 'lib/AppsManager';
 import styles from 'components/Sidebar/Sidebar.scss';
 
@@ -83,6 +84,7 @@ const Sidebar = ({
       <a target='_blank' href='https://parseplatform.github.io'>Open Source Hub</a>
       <a target='_blank' href='https://www.github.com/parseplatform'>GitHub</a>
       <a target='_blank' href='https://parseplatform.github.io/docs'>Docs</a>
+      <FooterMenu />
     </div>
   </div>
 }

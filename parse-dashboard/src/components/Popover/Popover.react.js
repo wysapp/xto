@@ -70,6 +70,13 @@ export default class Popover extends React.Component {
 
   }
 
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.position) {
+      this._popoverLayer.style.left = this.props.position.x + 'px';
+      this._popoverLayer.style.top = this.props.position.y + 'px';
+    }
+  }
+
   componentDidMount() {
     ReactDOM.render(
       <ContextProxy cx={this.context}>
@@ -86,6 +93,16 @@ export default class Popover extends React.Component {
 
     ReactDOM.unmountComponentAtNode(this._popoverLayer);
     this._popoverWrapper.removeChild(this._popoverLayer);
+  }
+
+
+  componentWillUpdate(nextProps) {
+    ReactDOM.render(
+      <ContextProxy cx={this.context}>
+        {React.Children.only(nextProps.children)}
+      </ContextProxy>,
+      this._popoverLayer
+    );
   }
 
   _checkExternalClick(e) {
