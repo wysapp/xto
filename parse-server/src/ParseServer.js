@@ -42,6 +42,8 @@ import { PushWorker} from './Push/PushWorker';
 import { loadAdapter} from './Adapters/AdapterLoader';
 import { LiveQueryController } from './Controllers/LiveQueryController';
 
+import { SchemasRouter} from './Routers/SchemasRouter';
+
 import { UserController } from './Controllers/UserController';
 
 
@@ -336,6 +338,7 @@ class ParseServer {
   static promiseRouter({appId}) {
     const routers = [
       new ClassesRouter(),
+      new SchemasRouter(),
       new FeaturesRouter(),
     ];
 
