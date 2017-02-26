@@ -21,7 +21,7 @@ const MongoClient = mongodb.MongoClient;
 const MongoSchemaCollectionName = '_SCHEMA';
 
 
-const converParseSchemaToMongoSchema = ({...schema}) => {
+const convertParseSchemaToMongoSchema = ({...schema}) => {
   delete schema.fields._rperm;
   delete schema.fields._wperm;
 
@@ -34,6 +34,30 @@ const converParseSchemaToMongoSchema = ({...schema}) => {
   }
 
   return schema;
+}
+
+
+const mongoSchemaFromFieldsAndClassNameAndCLP = (fields, className, classLevelPermissions) => {
+  const mongoObject = {
+    _id: className,
+    objectId: 'string',
+    updatedAt: 'string',
+    createdAt: 'string'
+  };
+
+  for (const fieldName in fields) {
+    mongoObject[fieldName] = MongoSchemaCollection.parseFieldTypeToMongoFieldType(fields[fieldName]);
+  }
+
+  if (typeof classLevelPermissions !== 'undefined') {
+    mongoObject._metadata = mongoObject._metadata || {};
+    if (!classLevelPermissions) {
+      delete mongoObject._metadata.class_permissions;
+    } else {
+      mongoObject._metadata.class_permissions = classLevelPermissions;
+    }
+  }
+  return mongoObject;
 }
 
 export class MongoStorageAdapter {
@@ -102,6 +126,26 @@ export class MongoStorageAdapter {
   }
 
 
+  createClass(className, schema) {
+    
+    schema = convertParseSchemaToMongoSchema(schema);
+    const mongoObject = mongoSchemaFromFieldsAndClassNameAndCLP(schema.fields, className, schema.classLevelPermissions);
+    mongoObject._id = className;
+
+    return this._schemaCollection()
+      .then(schemaCollection => schemaCollection._collection.insertOne(mongoObject))
+      .then(result => MongoSchemaCollection._TESTmongoSchemaToParseSchema(result.ops[0]))
+      .catch(error => {
+        if (error.code === 11000) { //Mongo's duplicate key error
+          throw new Parse.Error(Parse.Error.DUPLICATE_VALUE, 'Class already exists.');
+        } else {
+          throw error;
+        }
+      });
+
+  }
+
+
   // Return a promise for all schemas known to this adapter, in Parse format. In case the
   // schemas cannot be retrieved, returns a promise that rejects. Requirements for the
   // rejection reason are TBD.
@@ -116,11 +160,14 @@ export class MongoStorageAdapter {
   }
 
   count(className, schema, query) {
-    schema = converParseSchemaToMongoSchema(schema);
+    schema = convertParseSchemaToMongoSchema(schema);
     return this._adaptiveCollection(className)
-    .then(collection => collection.count(transformWhere(className, query, schema), {
-      maxTimeMS: this._maxTimeMS
-    }));
+    .then(collection => {
+      
+      return collection.count(transformWhere(className, query, schema), {
+        maxTimeMS: this._maxTimeMS
+      });
+    });
   }
 
 }

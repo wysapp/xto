@@ -18,8 +18,10 @@ import EmptyState from 'components/EmptyState/EmptyState.react';
 
 import SidebarAction from 'components/Sidebar/SidebarAction';
 
-import styles from 'dashboard/Data/Browser/Browser.scss';
+import { DefaultColumns, SpecialClasses } from 'lib/Constants';
 
+import styles from 'dashboard/Data/Browser/Browser.scss';
+import stringCompare from 'lib/stringCompare';
 import subscribeTo from 'lib/subscribeTo';
 
 @subscribeTo('Schema', 'schema')
@@ -58,6 +60,8 @@ export default class Browser extends DashboardView {
     };
 
     this.showCreateClass = this.showCreateClass.bind(this);
+
+    this.createClass = this.createClass.bind(this);
     
   }
 
@@ -77,6 +81,17 @@ export default class Browser extends DashboardView {
       return;
     }
     this.setState({showCreateClassDialog: true});
+  }
+
+
+  createClass(className) {
+    this.props.schema.dispatch(ActionTypes.CREATE_CLASS, {className})
+      .then(() => {
+        this.state.counts[className] = 0;
+        history.push(this.context.generatePath('browser/' + className));
+      }).always(() => {
+        this.setState({ showCreateClassDialog: false});
+      })
   }
 
 

@@ -111,5 +111,10 @@ function transformWhere(className, restWhere, schema) {
 
 // A sentinel value that helper transformations return when they
 // cannot perform a transformation
-function CannotTransform() {}
+
+
+
+module.exports = {
+  transformWhere,
+}
 

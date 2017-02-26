@@ -9,6 +9,10 @@ import React from 'react';
 import Modal from 'components/Modal/Modal.react';
 import Field from 'components/Field/Field.react';
 import Label from 'components/Label/Label.react';
+import TextInput from 'components/TextInput/TextInput.react';
+import Dropdown from 'components/Dropdown/Dropdown.react';
+import Option from'components/Dropdown/Option.react';
+
 import { SpecialClasses } from 'lib/Constants';
 
 function validClassName(name) {
@@ -51,6 +55,16 @@ export default class CreateClassDialog extends React.Component {
       }
     }
 
+    let typeDropdown = (
+      <Dropdown 
+        value={this.state.type}
+        onChange={(type) => this.setState({type: type, name: ''})}
+      >
+        {availableClasses.map((t) => <Option key={t} value={t}>{t}</Option>)}
+      </Dropdown>
+    );
+
+
     return (
       <Modal 
         type={Modal.Types.INFO}
@@ -71,13 +85,13 @@ export default class CreateClassDialog extends React.Component {
         {availableClasses.length > 1 ? 
           <Field 
             label={<Label text="What type of class do you need?" />}
-            input={<input type="text" name="text" />}
+            input={typeDropdown}
           /> : null
         }
         {this.state.type === 'Custom' ? 
           <Field 
             label={<Label text="What should we call it?" description={'Don\u2019t use any special characters, and start your name with a letter.'} />}
-            input={<input type="text" name="text1" />}
+            input={<TextInput placeholder="Give it a good name..." value={this.state.name} onChange={(name) => this.setState({name})} />}
           /> : null
         }
       </Modal>

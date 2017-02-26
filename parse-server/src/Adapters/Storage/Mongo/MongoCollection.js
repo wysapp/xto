@@ -22,4 +22,14 @@ export default class MongoCollection {
 
     return findOperation.toArray();
   }
+
+  count(query, {skip, limit, sort, maxTimeMS} = {}) {
+    const countOperation = this._mongoCollection.count(query, {skip, limit, sort, maxTimeMS});
+
+    return countOperation;
+  }
+
+  insertOne(object) {
+    return this._mongoCollection.insertOne(object);
+  }
 }

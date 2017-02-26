@@ -114,6 +114,43 @@ const systemClasses = Object.freeze(['_User', '_Installation', '_Role', '_Sessio
 
 const volatileClasses = Object.freeze(['_JobStatus', '_PushStatus', '_Hooks', '_GlobalConfig']);
 
+const CLPValidKeys = Object.freeze(['find', 'get', 'create', 'update', 'delete', 'addField', 'readUserFields', 'writeUserFields']);
+function validateCLP(perms, fields) {
+  if (!perms) {
+    return;
+  }
+
+  Object.keys(perms).forEach((operation) => {
+    if (CLPValidKeys.indexOf(operation) == -1) {
+      throw new Parse.Error(Parse.Error.INVALID_JSON, `${operation} is not a valid operation for class level permissions`);
+    }
+
+    if (operation === 'readUserFields' || operation === 'writeUserFields') {
+      if (!Array.isArray(perms[operation])) {
+        throw new Parse.Error(Parse.Error.INVALID_JSON, `'${perms[operation]}' is not a valid value for class level permissions ${operation}`);
+      } else {
+        perms[operation].forEach((key) => {
+          if (!fields[key] || fields[key].type != 'Pointer' || fields[key].targetClass != '_User') {
+            throw new Parse.Error(Parse.Error.INVALID_JSON, `'${key}' is not a valid column for class level pointer permissions ${operation}`);
+          }
+        });
+      }
+
+      return;
+    }
+
+    Object.keys(perms[operation]).forEach((key) => {
+      verifyPermissionKey(key);
+      const perm = perms[operation][key];
+      if (perm !== true) {
+        throw new Parse.Error(Parse.Error.INVALID_JSON, `'${perm}' is not a valid value for class level permissions ${operation}:${key}:${perm}`);
+      }
+    });
+  });
+}
+
+
+
 const joinClassRegex = /^_Join:[A-Za-z0-9_]+:[A-Za-z0-9_]+/;
 const classAndFieldRegex = /^[A-Za-z][A-Za-z0-9_]*$/;
 
@@ -129,6 +166,44 @@ function classNameIsValid(className) {
 function fieldNameIsValid(fieldName) {
   return classAndFieldRegex.test(fieldName);
 }
+
+
+function invalidClassNameMessage(className) {
+  return 'Invalid classname: ' + className + ', classnames can only have alphanumeric characters and _, and must start with an alpha character ';
+}
+
+
+const convertSchemaToAdapterSchema = schema => {
+  schema = injectDefaultSchema(schema);
+  delete schema.fields.ACL;
+  schema.fields._rperm = { type: 'Array'};
+  schema.fields._wperm = { type: 'Array'};
+
+  if (schema.className === '_User') {
+    delete schema.fields.password;
+    schema.fields._hashed_password = { type: 'String'};
+  }
+
+  return schema;
+}
+
+
+
+const convertAdapterSchemaToParseSchema = ({...schema}) => {
+  delete schema.fields._rperm;
+  delete schema.fields._wperm;
+
+  schema.fields.ACL = {type: 'ACL'};
+
+  if (schema.className === '_User') {
+    delete schema.fields.authData;
+    delete schema.fields._hashed_password;
+    schema.fields.password = {type: 'String'};
+  }
+
+  return schema;
+}
+
 
 const injectDefaultSchema = ({className, fields, classLevelPermissions}) => ({
   className,
@@ -241,6 +316,84 @@ export default class SchemaController {
       });
     });
   }
+
+
+  addClassIfNotExists(className, fields = {}, classLevelPermissions) {
+    var validationError = this.validateNewClass(className, fields, classLevelPermissions);
+    if (validationError) {
+      return Promise.reject(validationError);
+    }
+
+    return this._dbAdapter.createClass(className, convertSchemaToAdapterSchema({fields, classLevelPermissions, className}))
+      .then(convertAdapterSchemaToParseSchema)
+      .then((res) => {
+        return this._cache.clear().then(() => {
+          return Promise.resolve(res);
+        });
+      })
+      .catch(error => {
+        if (error && error.code === Parse.Error.DUPLICATE_VALUE) {
+          throw new Parse.Error(Parse.Error.INVALID_CLASS_NAME, `Class ${className} already exists.`);
+        } else {
+          throw error;
+        }
+      });
+
+  }
+
+
+  validateNewClass(className, fields = {}, classLevelPermissions) {
+    if (this.data[className]) {
+      throw new Parse.Error(Parse.Error.INVALID_CLASS_NAME, `Class ${className} already exists.`);
+    }
+
+    if (!classNameIsValid(className)) {
+      return {
+        code: Parse.Error.INVALID_CLASS_NAME,
+        error: invalidClassNameMessage(className),
+      };
+    }
+
+    return this.validateSchemaData(className, fields, classLevelPermissions, []);
+  }
+
+  validateSchemaData(className, fields, classLevelPermissions, existingFieldNames) {
+    for(const fieldName in fields) {
+      if (existingFieldNames.indexOf(fieldName) < 0) {
+        if (!fieldNameIsValid(fieldName)) {
+          return {
+            code: Parse.Error.INVALID_KEY_NAME,
+            error: 'invalid field name: ' + fieldName,
+          };
+        }
+
+        if (!fieldNameIsValidForClass(fieldName, className)) {
+          return {
+            code: 136,
+            error: 'field ' + fieldName + ' cannot be added',
+          };
+        }
+
+        const error = fieldTypeIsInvalid(fields[fieldName]);
+        if (error) return {code: error.code, error: error.message};
+      }
+    }
+
+    for (const fieldName in defaultColumns[className]) {
+      fields[fieldName] = defaultColumns[className][fieldName];
+    }
+
+    const geoPoints = Object.keys(fields).filter(key => fields[key] && fields[key].type === 'GeoPoint');
+    if (geoPoints.length > 1) {
+      return {
+        code: Parse.Error.INCORRECT_TYPE,
+        error: 'currently, only one GeoPoint field may exist in an object. Adding ' + geoPoints[1] + ' when ' + geoPoints[0] + ' already exists. ',
+      }
+    }
+    validateCLP(classLevelPermissions, fields);
+  }
+
+
 
 
   // Returns the expected type for a className+key combination

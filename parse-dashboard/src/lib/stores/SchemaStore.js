@@ -51,6 +51,17 @@ function SchemaStore(state, action) {
         });
       });
     
+    case ActionTypes.CREATE_CLASS:
+      return action.app.apiRequest(
+        'POST',
+        'schemas/' + action.className,
+        { className: action.className},
+        { useMasterKey: true }
+      ).then(({fields}) => {
+        return state
+        .setIn(['classes', action.className], Map(fields))
+        .setIn(['CLPs', action.className], Map({}));
+      });
   }
 }
 

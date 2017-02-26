@@ -92,6 +92,22 @@ function _mongoSchemaQueryFromNameQuery(name: string, query) {
   return object;
 }
 
+
+function parseFieldTypeToMongoFieldType({type, targetClass}) {
+  switch(type) {
+    case 'Pointer': return `*${targetClass}`;
+    case 'Relation': return `relation<${targetClass}>`;
+    case 'Number': return 'number';
+    case 'String': return 'string';
+    case 'Boolean': return 'boolean';
+    case 'Date': return 'date';
+    case 'Object': return 'object';
+    case 'Array': return 'array';
+    case 'File': return 'file';
+  };
+}
+
+
 class MongoSchemaCollection {
   _collection: MongoCollection;
 
@@ -116,5 +132,8 @@ class MongoSchemaCollection {
   }
 }
 
+
+MongoSchemaCollection._TESTmongoSchemaToParseSchema = mongoSchemaToParseSchema;
+MongoSchemaCollection.parseFieldTypeToMongoFieldType = parseFieldTypeToMongoFieldType;
 
 export default MongoSchemaCollection;
