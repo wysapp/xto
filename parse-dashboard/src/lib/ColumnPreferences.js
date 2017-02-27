@@ -1,0 +1,86 @@
+/*
+ * Copyright (c) 2016-present, Parse, LLC
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the LICENSE file in
+ * the root directory of this source tree.
+ */
+
+const VERSION = 'v1';
+const DEFAULT_WIDTH = 150;
+const COLUMN_SORT = '__columnClassesSort';
+const DEFAULT_COLUMN_SORT = '-createdAt';
+let cache = {};
+
+
+export function updatePreferences(prefs, appId, className) {
+  try {
+    localStorage.setItem(path(appId, className), JSON.stringify(prefs));
+  } catch(e) {
+
+  }
+
+  cache[appId] = cache[appId] || {};
+  cache[appId][className] = prefs;
+}
+
+export function getPreferences(appId, className) {
+  if (cache[appId] && cache[appId][className]) {
+    return cache[appId][className];
+  }
+
+  let entry;
+  try {
+    entry = localStorage.getItem(path(appId, className));
+  } catch(e) {
+    entry = null;
+  }
+
+  if (!entry) {
+    return null;
+  }
+  try {
+    let prefs= JSON.parse(entry);
+    cache[appId] = cache[appId] || {};
+    cache[appId][className] = prefs;
+    return prefs;
+  } catch(e) {
+    return null;
+  }
+}
+
+
+export function getColumnSort(sortBy, appId, className){
+  let cachedSort = getPreferences(appId, COLUMN_SORT) || [{name: className, value: DEFAULT_COLUMN_SORT}];
+  let ordering = [].concat(cachedSort);
+  let updated = false;
+  let missing = true;
+  let currentSort = sortBy ? sortBy : DEFAULT_COLUMN_SORT;
+  for (let i = 0; i < ordering.length; i++) {
+    if (ordering[i].name === className) {
+      missing = false;
+      if (ordering[i].value !== currentSort && sortBy) {
+        updated = true;
+        ordering[i].value = currentSort;
+      } else {
+        currentSort = ordering[i].value;
+      }
+    }
+  }
+
+  if (missing) {
+    ordering.push({name: className, value: currentSort});
+
+  }
+
+  if((updated && sortBy) || missing) {
+    updatePreferences(ordering, appId, COLUMN_SORT);
+  }
+
+  return currentSort;
+}
+
+
+function path(appId, className) {
+  return `ParseDashboard:${VERSION}:${appId}:${className}`;
+}

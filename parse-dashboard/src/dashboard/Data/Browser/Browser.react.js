@@ -13,6 +13,7 @@ import history from 'dashboard/history';
 import { List, Map } from 'immutable';
 import Parse from 'parse';
 import CreateClassDialog from 'dashboard/Data/Browser/CreateClassDialog.react';
+import Notification from 'dashboard/Data/Browser/Notification.react';
 import CategoryList from 'components/CategoryList/CategoryList.react';
 import EmptyState from 'components/EmptyState/EmptyState.react';
 
@@ -23,6 +24,8 @@ import { DefaultColumns, SpecialClasses } from 'lib/Constants';
 import styles from 'dashboard/Data/Browser/Browser.scss';
 import stringCompare from 'lib/stringCompare';
 import subscribeTo from 'lib/subscribeTo';
+import * as ColumnPreferences from 'lib/ColumnPreferences';
+
 
 @subscribeTo('Schema', 'schema')
 export default class Browser extends DashboardView {
@@ -76,6 +79,49 @@ export default class Browser extends DashboardView {
     }
   }
 
+  async prefetchData(props, context) {
+    const filters = this.extractFiltersFromQuery(props);
+    const {className, entityId, relationName } = props.params;
+    const isRelationRoute = entityId && relationName;
+    let relation = this.state.relation;
+    if (isRelationRoute && !relation) {
+      const parentObjectQuery = new Parse.Query(className);
+      const parent = await parentObjectQuery.get(entityId, {useMasterKey: true});
+      relation = parent.relation(relationName);
+    }
+
+    await this.setState({
+      data: null,
+      newObject: null,
+      lastMax: -1,
+      ordering: ColumnPreferences.getColumnSort(
+        false,
+        context.currentApp.applicationId,
+        className,
+      ),
+      selection: {},
+      relation: isRelationRoute ? relation : null,
+    });
+
+    if (isRelationRoute) {
+      this.fetchRelation(relation, filters);
+    } else if (className) {
+      this.fetchData(className, filters);
+    }
+  }
+
+  extractFiltersFromQuery(props) {
+    let filters = new List();
+
+    const query = props.location && props.location.query;
+    if (query && query.filters) {
+      const queryFilters = JSON.parse(query.filters);
+      queryFilters.forEach((filter)=> filters = filters.push(new Map(filter)));
+    }
+
+    return filters;
+  }
+
   showCreateClass() {
     if (!this.props.schema.data.get('classes')) {
       return;
@@ -101,6 +147,20 @@ export default class Browser extends DashboardView {
         .then(count => this.setState({counts: {[className]: count, ...this.state.counts}}));
     })
     this.setState({clp: this.props.schema.data.get('CLPs').toJS()});
+  }
+
+
+  async fetchData(source, filters = new List(), last) {
+    const data = await this.fetchParseData(source, filters) ;
+    var filteredCounts = {...this.state.filteredCounts};
+    if (filters.length > 0) {
+      filteredCounts[source] = await this.fetchParseDataCount(source, filters);
+    } else {
+      delete filteredCounts[source];
+    }
+
+    this.setState({data: data, filters, lastMax: 200, filteredCounts: filteredCounts});
+
   }
 
   renderSidebar() {
@@ -163,6 +223,49 @@ export default class Browser extends DashboardView {
             />
           </div>
         );
+      } else if (className && classes.get(className)) {
+        
+        let schema = {};
+        classes.get(className).forEach(({type, targetClass}, col) => {
+          schema[col] = {
+            type,
+            targetClass
+          };
+        });
+
+        let columns = {
+          objectId: { type: 'String'}
+        };
+
+        let userPointers = [];
+        classes.get(className).forEach((field, name) => {
+          if (name === 'objectId') {
+            return ;
+          }
+          let info = { type: field.type};
+          if (field.targetClass) {
+            info.targetClass = field.targetClass;
+            if (field.targetClass === '_User') {
+              userPointers.push(name);
+            }
+          }
+          columns[name] = info;
+        });
+
+        var count;
+        if (this.state.relation){
+          count = this.state.relationCount;
+        } else {
+          if (className in this.state.filteredCounts) {
+            count = this.state.filteredCounts[className];
+          } else {
+            count = this.state.counts[className];
+          }
+        }
+
+        browser = (
+          <div>ssssssssssssssssssssssss</div>
+        );
       }
     }
 
@@ -181,6 +284,7 @@ export default class Browser extends DashboardView {
     return (
       <div>
         {browser}
+        <Notification note={this.state.lastError} />
         {extras}
       </div>
     )
