@@ -12,6 +12,8 @@ import DashboardView from 'dashboard/DashboardView.react';
 import history from 'dashboard/history';
 import { List, Map } from 'immutable';
 import Parse from 'parse';
+
+import DataBrowser from 'dashboard/Data/Browser/DataBrowser.react';
 import CreateClassDialog from 'dashboard/Data/Browser/CreateClassDialog.react';
 import Notification from 'dashboard/Data/Browser/Notification.react';
 import CategoryList from 'components/CategoryList/CategoryList.react';
@@ -23,6 +25,7 @@ import { DefaultColumns, SpecialClasses } from 'lib/Constants';
 
 import styles from 'dashboard/Data/Browser/Browser.scss';
 import stringCompare from 'lib/stringCompare';
+import queryFromFilters from 'lib/queryFromFilters';
 import subscribeTo from 'lib/subscribeTo';
 import * as ColumnPreferences from 'lib/ColumnPreferences';
 
@@ -62,6 +65,7 @@ export default class Browser extends DashboardView {
       relationCount: 0,
     };
 
+    this.updateOrdering = this.updateOrdering.bind(this);
     this.showCreateClass = this.showCreateClass.bind(this);
 
     this.createClass = this.createClass.bind(this);
@@ -149,6 +153,26 @@ export default class Browser extends DashboardView {
     this.setState({clp: this.props.schema.data.get('CLPs').toJS()});
   }
 
+  async fetchParseData(source, filters) {
+    const query = queryFromFilters(source, filters);
+    const sortDir = this.state.ordering[0] === '-' ? '-' : '+';
+    const field = this.state.ordering.substr(sortDir === '-' ? 1 : 0);
+
+    if (sortDir === '-') {
+      query.descending(field);
+    } else {
+      query.ascending(field);
+    }
+
+    if (field !== 'createdAt') {
+      query.addDescending('createdAt');
+    }
+
+    query.limit(200);
+    const data = await query.find({useMasterKey: true});
+    return data;
+  }
+
 
   async fetchData(source, filters = new List(), last) {
     const data = await this.fetchParseData(source, filters) ;
@@ -162,6 +186,24 @@ export default class Browser extends DashboardView {
     this.setState({data: data, filters, lastMax: 200, filteredCounts: filteredCounts});
 
   }
+
+  
+  updateOrdering(ordering) {
+    let source = this.state.relation || this.props.params.className;
+    this.setState({
+      ordering: ordering,
+      selection: {}
+    }, () => this.fetchData(source, this.state.filters));
+
+    ColumnPreferences.getColumnSort(
+      ordering,
+      this.context.currentApp.applicationId,
+      this.props.params.className
+    );
+  }
+
+
+
 
   renderSidebar() {
     let current = this.props.params.className || '';
@@ -264,7 +306,26 @@ export default class Browser extends DashboardView {
         }
 
         browser = (
-          <div>ssssssssssssssssssssssss</div>
+          <DataBrowser
+            count={count}
+            perms={this.state.clp[className]}
+            schema={schema}
+            userPointers={userPointers}
+            filters={this.state.filters}
+
+            columns={columns}
+            className={className}
+
+            data={this.state.data}
+            ordering={this.state.ordering}
+            
+
+            relation={this.state.relation}
+            updateOrdering={this.updateOrdering}
+
+          >
+
+          </DataBrowser>
         );
       }
     }

@@ -8,6 +8,7 @@ import {
 
 
 import {
+  transformKey,
   transformWhere
 } from './MongoTransform';
 
@@ -157,6 +158,29 @@ export class MongoStorageAdapter {
   getClass(className) {
     return this._schemaCollection()
     .then(schemasCollection => schemasCollection._fechOneSchemaFrom_SCHEMA(className));
+  }
+
+  find(className, schema, query, {skip, limit,sort, keys}) {
+
+    schema = convertParseSchemaToMongoSchema(schema);
+    
+    const mongoWhere = transformWhere(className, query, schema);
+    const mongoSort = _.mapKeys(sort, (value, fieldName) => transformKey(className, fieldName, schema));
+    const mongoKeys = _.reduce(keys, (memo, key) => {
+      memo[transformKey(className, key, schema)] = 1;
+      return memo;
+    }, {});
+
+    return this._adaptiveCollection(className)
+    .then(collection => collection.find(mongoWhere, {
+      skip,
+      limit,
+      sort: mongoSort,
+      keys: mongoKeys,
+      maxTimeMS: this._maxTimeMS
+    }))
+    .then(objects => objects.map(object => mongoObjectToParseObject(className, object, schema)));
+
   }
 
   count(className, schema, query) {

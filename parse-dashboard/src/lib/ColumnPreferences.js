@@ -81,6 +81,41 @@ export function getColumnSort(sortBy, appId, className){
 }
 
 
+export function getOrder(cols, appId, className) {
+  let prefs = getPreferences(appId, className) || [{name: 'objectId', width: DEFAULT_WIDTH}];
+  let order = [].concat(prefs);
+  let seen = {};
+  for (let i = 0; i < order.length; i++) {
+    seen[order[i].name] = true;
+  }
+  let requested = {};
+  let updated = false;
+  for(let name in cols) {
+    requested[name] = true;
+    if (!seen[name]) {
+      order.push({name: name, width: DEFAULT_WIDTH});
+      seen[name] = true;
+      updated = true;
+    }
+  }
+
+  let filtered = [];
+  for(let i = 0; i < order.length; i++) {
+    let name = order[i].name;
+    if (requested[name]) {
+      filtered.push(order[i]);
+    } else {
+      updated = true;
+    }
+  }
+
+  if (updated) {
+    updatePreferences(filtered, appId, className);
+  }
+  return filtered;
+}
+
+
 function path(appId, className) {
   return `ParseDashboard:${VERSION}:${appId}:${className}`;
 }
