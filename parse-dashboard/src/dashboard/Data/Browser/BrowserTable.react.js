@@ -69,6 +69,7 @@ console.log('5555555555555555555', this.props);
           headers={headers}
           updateOrdering={this.props.updateOrdering}
           readonly={!!this.props.relation}
+          onResize={this.props.handleResize}
         />
 
       </div>

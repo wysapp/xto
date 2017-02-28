@@ -8,6 +8,7 @@
 import React from 'react';
 import { DragDropContext } from 'react-dnd';
 import HTML5Backend from 'react-dnd-html5-backend';
+import DragHandle from 'components/DragHandle/DragHandle.react';
 import DataBrowserHeader from 'components/DataBrowserHeader/DataBrowserHeader.react';
 import styles from 'components/DataBrowserHeaderBar/DataBrowserHeaderBar.scss';
 
@@ -16,7 +17,7 @@ import styles from 'components/DataBrowserHeaderBar/DataBrowserHeaderBar.scss';
 export default class DataBrowserHeaderBar extends React.Component {
 
   render(){
-    let { headers, readonly , updateOrdering} = this.props;
+    let { headers, readonly, onResize , updateOrdering} = this.props;
 
     let elements = [
       // Note: bulk checkbox is disabled as all rows are selected (not just visible ones due to current lazy loading implementation)
@@ -61,6 +62,10 @@ export default class DataBrowserHeaderBar extends React.Component {
             index={i}
           />
         </div>
+      );
+
+      elements.push(
+        <DragHandle key={"handle" + i} className={styles.handle} onDrag={onResize.bind(null, i)} />
       );
 
     });

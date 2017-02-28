@@ -83,6 +83,22 @@ export default class Browser extends DashboardView {
     }
   }
 
+  componentWillReceiveProps(nextProps, nextContext) {
+    if (this.context !== nextContext) {
+      if (this.props.params.appId !== nextProps.params.appId || !this.props.params.className) {
+        this.setState({counts: {}});
+        Parse.Object._clearAllState();
+      }
+      this.prefetchData(nextProps, nextContext);
+      nextProps.schema.dispatch(ActionTypes.FETCH)
+        .then(() => this.handleFetchedSchema());
+    }
+
+    if (!nextProps.params.className && nextProps.schema.data.get('classes')) {
+      this.redirectToFirstClass(nextProps.schema.data.get('classes'));
+    }
+  }
+
   async prefetchData(props, context) {
     const filters = this.extractFiltersFromQuery(props);
     const {className, entityId, relationName } = props.params;
@@ -124,6 +140,23 @@ export default class Browser extends DashboardView {
     }
 
     return filters;
+  }
+
+  redirectToFirstClass(classList) {
+    if (!classList.isEmpty()) {
+      let classes = Object.keys(classList.toObject());
+      classes.sort((a, b) => {
+        if (a[0] === '_' && b[0] !== '_') {
+          return -1;
+        }
+        if (b[0] === '_' && a[0] !== '_') {
+          return 1;
+        }
+        return a.toUpperCase() < b.toUpperCase() ? -1 : 1;
+      });
+
+      history.replace(this.context.generatePath('browser/' + classes[0]));
+    }
   }
 
   showCreateClass() {

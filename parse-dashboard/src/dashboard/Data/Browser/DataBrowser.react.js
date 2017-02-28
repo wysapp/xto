@@ -8,6 +8,7 @@
 import React from 'react';
 import ParseApp from 'lib/ParseApp';
 import BrowserTable from 'dashboard/Data/Browser/BrowserTable.react';
+import BrowserToolbar from 'dashboard/Data/Browser/BrowserToolbar.react';
 import * as ColumnPreferences from 'lib/ColumnPreferences';
 import {SpecialClasses} from 'lib/Constants';
 
@@ -40,6 +41,29 @@ export default class DataBrowser extends React.Component {
     this.saveOrderTimeout = null;
   }
 
+  componentWillReceiveProps(props, context) {
+    if (props.className !== this.props.className) {
+      let order = ColumnPreferences.getOrder(
+        props.columns,
+        context.currentApp.applicationId,
+        props.className
+      );
+
+      this.setState({
+        order: order,
+        current: null,
+        editing: false,
+      });
+    } else if (Object.keys(props.columns).length !== Object.keys(this.props.columns).length) {
+      let order = ColumnPreferences.getOrder(
+        props.columns,
+        context.currentApp.applicationId,
+        props.className
+      );
+      this.setState({order});
+    }
+  }
+
   componentDidMount() {
     document.body.addEventListener('keydown', this.handleKey);
   }
@@ -48,12 +72,31 @@ export default class DataBrowser extends React.Component {
     document.body.removeEventListener('keydown', this.handleKey);
   }
 
+  updatePreferences(order) {
+    if (this.saveOrderTimeout) {
+      clearTimeout(this.saveOrderTimeout);
+    }
+
+    let appId = this.context.currentApp.applicationId;
+    let className = this.props.className;
+    this.saveOrderTimeout = setTimeout(() => {
+      ColumnPreferences.updatePreferences(order, appId, className)
+    }, 1000);
+  }
+
+  handleResize(index, delta) {
+    this.setState(({ order }) => {
+      order[index].width = Math.max(60, order[index].width + delta);
+      this.updatePreferences(order);
+      return {order};
+    });
+  }
+
   handleKey(e) {
 
   }
 
   render() {
-console.log('4444444444444444444', this.props);
     let { className, ...other } = this.props;
 
     return (
@@ -63,7 +106,20 @@ console.log('4444444444444444444', this.props);
           current={this.state.current}
           editing={this.state.editing}
           className={className}
+
+          handleResize={this.handleResize.bind(this)}
           
+          {...other}
+        />
+
+        <BrowserToolbar
+          hidePerms={className === '_Installation'}
+          className={SpecialClasses[className] || className}
+          classNameForPermissionsEditor={className}
+
+          enableDeleteAllRows={this.context.currentApp.serverInfo.features.schemas.clearAllDataFromClass}
+          enableExportClass={this.context.currentApp.serverInfo.features.schemas.exportClass}
+          enableSecurityDialog={this.context.currentApp.serverInfo.features.schemas.editClassLevelPermissions}
           {...other}
         />
       </div>
