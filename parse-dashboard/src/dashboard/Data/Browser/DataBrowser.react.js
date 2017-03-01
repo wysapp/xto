@@ -96,6 +96,13 @@ export default class DataBrowser extends React.Component {
 
   }
 
+
+  setCurrent(current) {
+    if (this.state.current !== current) {
+      this.setState({current: current});
+    }
+  }
+
   render() {
     let { className, ...other } = this.props;
 
@@ -116,6 +123,7 @@ export default class DataBrowser extends React.Component {
           hidePerms={className === '_Installation'}
           className={SpecialClasses[className] || className}
           classNameForPermissionsEditor={className}
+          setCurrent={this.setCurrent.bind(this)}
 
           enableDeleteAllRows={this.context.currentApp.serverInfo.features.schemas.clearAllDataFromClass}
           enableExportClass={this.context.currentApp.serverInfo.features.schemas.exportClass}

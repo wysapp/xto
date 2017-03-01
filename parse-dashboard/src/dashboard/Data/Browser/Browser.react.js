@@ -65,6 +65,10 @@ export default class Browser extends DashboardView {
       relationCount: 0,
     };
 
+    this.prefetchData = this.prefetchData.bind(this);
+    this.fetchData = this.fetchData.bind(this);
+    this.updateFilters = this.updateFilters.bind(this);
+
     this.updateOrdering = this.updateOrdering.bind(this);
     this.showCreateClass = this.showCreateClass.bind(this);
 
@@ -220,6 +224,19 @@ export default class Browser extends DashboardView {
 
   }
 
+  updateFilters(filters) {
+    const relation = this.state.relation;
+    if (relation) {
+      this.setRelation(relation, filters);
+    } else {
+      const source = this.props.params.className;
+      const _filters = JSON.stringify(filters.toJSON());
+      const url = `browser/${source}${(filters.size === 0 ? '' : `?filters=${(encodeURIComponent(_filters))}`)}`;
+
+      history.push(this.context.generatePath(url));
+    }
+  }
+
   
   updateOrdering(ordering) {
     let source = this.state.relation || this.props.params.className;
@@ -275,7 +292,7 @@ export default class Browser extends DashboardView {
   }
 
   renderContent() {
-    console.log('33333333333333333333-Browser-Props', this.props);
+    
     let browser = null;
     let className = this.props.params.className;
 
@@ -345,10 +362,11 @@ export default class Browser extends DashboardView {
             schema={schema}
             userPointers={userPointers}
             filters={this.state.filters}
+            onFilterChange={this.updateFilters}
 
             columns={columns}
             className={className}
-
+            selection={this.state.selection}
             data={this.state.data}
             ordering={this.state.ordering}
             
