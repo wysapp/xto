@@ -70,6 +70,7 @@ export default class Browser extends DashboardView {
     this.updateFilters = this.updateFilters.bind(this);
 
     this.updateOrdering = this.updateOrdering.bind(this);
+    this.addRow = this.addRow.bind(this);
     this.showCreateClass = this.showCreateClass.bind(this);
 
     this.createClass = this.createClass.bind(this);
@@ -179,6 +180,18 @@ export default class Browser extends DashboardView {
       }).always(() => {
         this.setState({ showCreateClassDialog: false});
       })
+  }
+
+  addRow() {
+    if (!this.state.newObject) {
+      const relation = this.state.relation;
+      this.setState({
+        newObject: (relation ? 
+          new Parse.Object(relation.targetClassName) :
+          new Parse.Object(this.props.params.className)
+        )
+      });
+    }
   }
 
 
@@ -369,10 +382,12 @@ export default class Browser extends DashboardView {
             selection={this.state.selection}
             data={this.state.data}
             ordering={this.state.ordering}
+            newObject={this.state.newObject}
             
 
             relation={this.state.relation}
             updateOrdering={this.updateOrdering}
+            onAddRow={this.addRow}
 
           >
 

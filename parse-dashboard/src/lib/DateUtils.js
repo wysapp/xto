@@ -44,6 +44,14 @@ export function nextMonth(date) {
   );
 }
 
+export function prevMonth(date) {
+  return new Date(
+    date.getFullYear(),
+    date.getMonth() - 1,
+    1
+  );
+}
+
 export function daysInMonth(date) {
   let next = nextMonth(date);
   let lastDay = new Date(next.getFullYear(), next.getMonth(), next.getDate() -1);

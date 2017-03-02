@@ -26,17 +26,73 @@ export default class DateTimePicker extends React.Component {
     }
   }
 
-  changeHours(e) {
+  componentWillReceiveProps(props) {
+    let timeRef = props.value || hoursFrom(new Date(), 1);
+    this.setState({
+      hours: String(timeRef[getDateMethod(props.local, 'getHours')]()),
+      minutes: (timeRef[getDateMethod(props.local, 'getMinutes')]() < 10 ? '0' : '') + String(timeRef[getDateMethod(props.local, 'getMinutes')]()),
+    });
+  }
 
+  changeHours(e) {
+    let hoursString = e.target.value;
+    if (hoursString === '') {
+      return this.setState({hours: ''});
+    }
+
+    if (isNaN(hoursString)) {
+      return ;
+    }
+    let hours = parseInt(hoursString, 10);
+    if (hours < 0) {
+      hours = 0;
+    }
+
+    if (hours > 23) {
+      hours = 23;
+    }
+    this.setState({hours: String(hours)});
   }
 
 
   changeMinutes(e) {
-
+    let minutesString = e.target.value;
+    if (minutesString === '') {
+      return this.setState({ minutes: '' });
+    }
+    if (isNaN(minutesString)) {
+      return;
+    }
+    let minutes = parseInt(minutesString, 10);
+    if (minutes < 0) {
+      minutes = 0;
+    }
+    if (minutes > 59) {
+      minutes = 59;
+    }
+    this.setState({ minutes: String(minutes) });
   }
 
   commitTime() {
-
+    let dateRef = this.props.value || new Date();
+    let newDate = this.props.local ? new Date(
+      dateRef.getFullYear(),
+      dateRef.getMonth(),
+      dateRef.getDate(),
+      parseInt(this.state.hours, 10),
+      parseInt(this.state.minutes, 10)
+    ) :
+    new Date(Date.UTC(
+      dateRef.getUTCFullYear(),
+      dateRef.getUTCMonth(),
+      dateRef.getUTCDate(),
+      parseInt(this.state.hours, 10),
+      parseInt(this.state.minutes, 10)
+    ));
+    this.props.onChange(newDate);
+    if (this.props.close) {
+      this.props.close();
+    }
   }
 
 
@@ -48,7 +104,22 @@ export default class DateTimePicker extends React.Component {
           local={this.props.local}
           value={this.props.value}
           onChange={(newValue) => {
-
+            let timeRef = this.props.value || hoursFrom(new Date(), 1);
+            let newDate = this.props.local ? new Date(
+              newValue.getFullYear(),
+              newValue.getMonth(),
+              newValue.getDate(),
+              newValue.getHours(),
+              newValue.getMinutes()
+            ) : 
+            new Date(Date.UTC(
+              newValue.getUTCFullYear(),
+              newValue.getUTCMonth(),
+              newValue.getUTCDate(),
+              timeRef.getUTCHours(),
+              timeRef.getUTCMinutes()
+            ));
+            this.props.onChange(newDate);
           }}
         />
         <div className={styles.time}>

@@ -27,8 +27,13 @@ export default class BrowserTable extends React.Component {
     }
   }
 
+  renderRow({row, obj, rowWidth}) {
+    let attributes = obj.attributes;
+    
+  }
+
   render() {
-console.log('5555555555555555555', this.props);
+
     let ordering = {};
     if (this.props.ordering) {
       if (this.props.ordering[0] === '-') {
@@ -51,13 +56,20 @@ console.log('5555555555555555555', this.props);
     let editor = null;
     let table = <div ref="table" />;
     if (this.props.data) {
+     
       let rowWidth = 210;
       for (let i = 0; i < this.props.order.length; i++) {
         rowWidth += this.props.order[i].width;
       }
       
       let newRow = null;
-      
+      if (this.props.newObject && this.state.offset <= 0) {
+        newRow = (
+          <div style={{marginBottom: 30, borderBottom: '1px solid #169CEE'}}>
+            {this.renderRow({row: -1, obj: this.props.newObject, rowWidth: rowWidth})}
+          </div>
+        );
+      }
       
 
     }

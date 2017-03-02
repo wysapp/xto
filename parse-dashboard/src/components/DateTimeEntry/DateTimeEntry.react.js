@@ -58,12 +58,31 @@ export default class DateTimeEntry extends React.Component {
     this.setState({open: false});
   }
 
-  inputDate() {
-
+  inputDate(e) {
+    this.setState({value: e.target.value, open: false});
   }
 
   commitDate() {
-
+    if (this.state.value === this.props.value.toISOString()) {
+      return;
+    }
+    let date = new Date(this.state.value);
+    if (isNaN(date.getTime())) {
+      this.setState({value: this.props.value.toISOString() });
+    } else if (!this.state.value.toLowerCase().endsWith('z')) {
+      let utc = new Date(Date.UTC(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
+        date.getHours(),
+        date.getMinutes(),
+        date.getSeconds(),
+        date.getMilliseconds()
+      ));
+      this.props.onChange(utc);
+    } else {
+      this.props.onChange(date);
+    }
   }
 
   render() {

@@ -63,7 +63,7 @@
       }
 
       &:after {
-        content:'';
+        content: '';
         position: absolute;
         @include arrow('right', 8px, 4px, white);
         top: 2px;
@@ -78,7 +78,6 @@
   }
 }
 
-
 .weekdays {
   opacity: 0.5;
   font-size: 12px;
@@ -91,5 +90,45 @@
     line-height: 13px;
     font-size: 13px;
     text-align: center;
+  }
+}
+
+.days {
+  span, a {
+    @include DosisFont;
+    display: inline-block;
+    vertical-align: bottom;
+    width: 26px;
+    height: 20px;
+    line-height: 20px;
+    font-size: 12px;
+    text-align: center;
+    margin: 0;
+    color: $blue;
+  }
+
+  .selected {
+    color: white;
+    background: $darkBlue;
+  }
+}
+
+.shadeBefore {
+  a {
+    background: #efeff1;
+  }
+
+  .selected {
+    background: $darkBlue;
+  }
+
+  .selected ~ a {
+    background: white;
+  }
+}
+
+.shadeAfter {
+  .selected ~ a {
+    background: #efeff1;
   }
 }

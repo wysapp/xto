@@ -9,6 +9,8 @@ import React from 'react';
 import PropTypes from 'lib/PropTypes';
 
 import {
+  prevMonth,
+  nextMonth,
   getMonth,
   daysInMonth,
   WEEKDAYS,
@@ -27,12 +29,24 @@ export default class Calendar extends React.Component {
     };
   }
 
-  handlePrev() {
+  componentWillReceiveProps(props) {
+    if (props.value) {
+      this.setState({
+        currentMonth: new Date(props.value[getDateMethod(props.local, 'getFullYear')](), props.value[getDateMethod(props.local, 'getMonth')](), 1)
+      });
+    }
+  }
 
+  handlePrev() {
+    this.setState({
+      currentMonth: prevMonth(this.state.currentMonth),
+    });
   }
 
   handleNext() {
-
+    this.setState({
+      currentMonth: nextMonth(this.state.currentMonth),
+    });
   }
 
   renderMonth() {
@@ -78,7 +92,7 @@ export default class Calendar extends React.Component {
       );
 
       labels.push(
-        <a href="javascript:;" role="button" key={"day" + i} className={className} onClick={onchange}>{i}</a>
+        <a href="javascript:;" role="button" key={"day" + i} className={className} onClick={onChange}>{i}</a>
       );
     }
 
