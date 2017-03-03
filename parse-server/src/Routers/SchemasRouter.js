@@ -28,9 +28,23 @@ function createSchema(req) {
   return req.config.database.loadSchema({clearCache: true})
     .then(schema => schema.addClassIfNotExists(className, req.body.fields, req.body.classLevelPermissions))
     .then(schema => {
-      console.log('22222222222222222222222', schema);
+      
       return {response: schema};
     });
+}
+
+function modifySchema(req) {
+  if (req.body.className && req.body.className != req.params.className){
+    return classNameMismatchResponse(req.body.className, req.params.className);
+  }
+
+  const submittedFields = req.body.fields || {};
+  const className = req.params.className;
+
+  return req.config.database.loadSchema({clearCache: true})
+    .then(schema => schema.updateClass(className, submittedFields, req.body.classLevelPermissions, req.config.database))
+    .then(result => ({response: result}));
+
 }
 
 export class SchemasRouter extends PromiseRouter {
@@ -38,5 +52,7 @@ export class SchemasRouter extends PromiseRouter {
     this.route('GET', '/schemas', middleware.promiseEnforceMasterKeyAccess, getAllSchemas);
 
     this.route('POST', '/schemas/:className', middleware.promiseEnforceMasterKeyAccess, createSchema);
+
+    this.route('PUT', '/schemas/:className', middleware.promiseEnforceMasterKeyAccess, modifySchema);
   }
 }

@@ -62,6 +62,26 @@ function SchemaStore(state, action) {
         .setIn(['classes', action.className], Map(fields))
         .setIn(['CLPs', action.className], Map({}));
       });
+    
+    case ActionTypes.ADD_COLUMN:
+      let newField = {
+        [action.name]: {
+          type: action.columnType
+        }
+      };
+
+      if (action.columnType === 'Pointer' || action.columnType === 'Relation'){
+        newField[action.name].targetClass = action.targetClass;
+      }
+
+      return action.app.apiRequest(
+        'PUT',
+        'schemas/' + action.className,
+        {className: action.className, fields: newField},
+        { useMasterKey: true }
+      ).then(({fields}) => {
+        return state.setIn(['classes', action.className], Map(fields));
+      });
   }
 }
 

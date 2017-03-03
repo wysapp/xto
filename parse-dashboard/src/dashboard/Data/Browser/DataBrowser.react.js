@@ -96,6 +96,12 @@ export default class DataBrowser extends React.Component {
 
   }
 
+  setEditing(editing) {
+    if (this.state.editing !== editing) {
+      this.setState({editing: editing});
+    }
+  }
+
 
   setCurrent(current) {
     if (this.state.current !== current) {
@@ -115,6 +121,8 @@ export default class DataBrowser extends React.Component {
           className={className}
 
           handleResize={this.handleResize.bind(this)}
+          setEditing={this.setEditing.bind(this)}
+          setCurrent={this.setCurrent.bind(this)}
           
           {...other}
         />

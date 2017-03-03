@@ -15,6 +15,7 @@ import Parse from 'parse';
 
 import DataBrowser from 'dashboard/Data/Browser/DataBrowser.react';
 import CreateClassDialog from 'dashboard/Data/Browser/CreateClassDialog.react';
+import AddColumnDialog from 'dashboard/Data/Browser/AddColumnDialog.react';
 import Notification from 'dashboard/Data/Browser/Notification.react';
 import CategoryList from 'components/CategoryList/CategoryList.react';
 import EmptyState from 'components/EmptyState/EmptyState.react';
@@ -70,10 +71,13 @@ export default class Browser extends DashboardView {
     this.updateFilters = this.updateFilters.bind(this);
 
     this.updateOrdering = this.updateOrdering.bind(this);
+    this.showAddColumn = this.showAddColumn.bind(this);
     this.addRow = this.addRow.bind(this);
     this.showCreateClass = this.showCreateClass.bind(this);
 
     this.createClass = this.createClass.bind(this);
+
+    this.addColumn = this.addColumn.bind(this);
     
   }
 
@@ -171,6 +175,10 @@ export default class Browser extends DashboardView {
     this.setState({showCreateClassDialog: true});
   }
 
+  showAddColumn() {
+    this.setState({ showAddColumnDialog: true });
+  }
+
 
   createClass(className) {
     this.props.schema.dispatch(ActionTypes.CREATE_CLASS, {className})
@@ -179,6 +187,20 @@ export default class Browser extends DashboardView {
         history.push(this.context.generatePath('browser/' + className));
       }).always(() => {
         this.setState({ showCreateClassDialog: false});
+      })
+  }
+
+  addColumn(type, name, target) {
+    
+    let payload = {
+      className: this.props.params.className,
+      columnType: type,
+      name: name,
+      targetClass: target
+    };
+    this.props.schema.dispatch(ActionTypes.ADD_COLUMN, payload)
+      .always(() => {
+        this.setState({showAddColumnDialog: false});
       })
   }
 
@@ -387,6 +409,7 @@ export default class Browser extends DashboardView {
 
             relation={this.state.relation}
             updateOrdering={this.updateOrdering}
+            onAddColumn={this.showAddColumn}
             onAddRow={this.addRow}
 
           >
@@ -404,6 +427,20 @@ export default class Browser extends DashboardView {
           currentClasses={this.props.schema.data.get('classes').keySeq().toArray()}
           onCancel={() => this.setState({showCreateClassDialog: false})}
           onConfirm={this.createClass}
+        />
+      );
+    } else if (this.state.showAddColumnDialog) {
+      let currentColumns = [];
+      classes.get(className).forEach((field, name) => {
+        currentColumns.push(name);
+      });
+
+      extras = (
+        <AddColumnDialog 
+          currentColumns={currentColumns}
+          classes={this.props.schema.data.get('classes').keySeq().toArray()}
+          onCancel={() => this.setState({showAddColumnDialog: false})}
+          onConfirm={this.addColumn}
         />
       );
     }

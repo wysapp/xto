@@ -115,6 +115,8 @@ const systemClasses = Object.freeze(['_User', '_Installation', '_Role', '_Sessio
 const volatileClasses = Object.freeze(['_JobStatus', '_PushStatus', '_Hooks', '_GlobalConfig']);
 
 const CLPValidKeys = Object.freeze(['find', 'get', 'create', 'update', 'delete', 'addField', 'readUserFields', 'writeUserFields']);
+
+
 function validateCLP(perms, fields) {
   if (!perms) {
     return;
@@ -168,9 +170,61 @@ function fieldNameIsValid(fieldName) {
 }
 
 
+function fieldNameIsValidForClass(fieldName, className) {
+  if (!fieldNameIsValid(fieldName)){
+    return false;
+  }
+
+  if (defaultColumns._Default[fieldName]) {
+    return false;
+  }
+
+  if (defaultColumns[className] && defaultColumns[className][fieldName]) {
+    return false;
+  }
+  return true;
+}
+
 function invalidClassNameMessage(className) {
   return 'Invalid classname: ' + className + ', classnames can only have alphanumeric characters and _, and must start with an alpha character ';
 }
+
+
+const invalidJsonError = new Parse.Error(Parse.Error.INVALID_JSON, 'invalid JSON');
+const validNonRelationOrPointerTypes = [
+  'Number',
+  'String',
+  'Boolean',
+  'Date',
+  'Object',
+  'Array',
+  'GeoPoint',
+  'File'
+];
+
+const fieldTypeIsInvalid = ({type, targetClass}) => {
+  if (['Pointer', 'Relation'].indexOf(type) >= 0) {
+    if (!targetClass) {
+      return new Parse.Error(135, `type ${type} needs a class name`);
+    } else if (typeof targetClass !== 'string') {
+      return invalidJsonError;
+    } else if (!classNameIsValid(targetClass)) {
+      return new Parse.Error(Parse.Error.INVALID_CLASS_NAME, invalidClassNameMessage(targetClass));
+    } else {
+      return undefined;
+    }
+  }
+
+  if (typeof type !== 'string') {
+    return invalidJsonError;
+  }
+
+  if (validNonRelationOrPointerTypes.indexOf(type) < 0) {
+    return new Parse.Error(Parse.Error.INCORRECT_TYPE, `invalid field type: ${type}`);
+  }
+  return undefined;
+}
+
 
 
 const convertSchemaToAdapterSchema = schema => {
@@ -341,6 +395,65 @@ export default class SchemaController {
 
   }
 
+  updateClass(className, submittedFields, classLevelPermissions, database){
+    return this.getOneSchema(className)
+      .then(schema => {
+        const existingFields = schema.fields;
+        Object.keys(submittedFields).forEach(name => {
+          const field = submittedFields[name];
+          if (existingFields[name] && field.__op !== 'Delete') {
+            throw new Parse.Error(255, `Field ${name} exists, cannot update.`);
+          }
+          if (!existingFields[name] && field.__op === 'Delete') {
+            throw new Parse.Error(255, `Field ${name} does not exist, cannot delete.`);
+          }
+        });
+
+        delete existingFields._rperm;
+        delete existingFields._wperm;
+        const newSchema = buildMergedSchemaObject(existingFields, submittedFields);
+        
+        const validationError = this.validateSchemaData(className, newSchema, classLevelPermissions, Object.keys(existingFields));
+        if (validationError) {
+          throw new Parse.Error(validationError.code, validationError.error);
+        }
+
+        const deletePromises = [];
+        const insertedFields = [];
+        Object.keys(submittedFields).forEach(fieldName => {
+          if (submittedFields[fieldName].__op === 'Delete') {
+            const promise = this.deleteField(fieldName, className, database);
+            deletePromises.push(promise);
+          } else {
+            insertedFields.push(fieldName);
+          }
+        });
+
+        return Promise.all(deletePromises)
+          .then(() => this.reloadData({clearCache: true}))
+          .then(() => {
+            const promises = insertedFields.map(fieldName => {
+              const type = submittedFields[fieldName];
+              return this.enforceFieldExists(className, fieldName, type);
+            });
+            return Promise.all(promises);
+          })
+          .then(() => this.setPermissions(className, classLevelPermissions, newSchema))
+          .then(() => ({
+            className: className,
+            fields: this.data[className],
+            classLevelPermissions: this.perms[className]
+          }));
+      })
+      .catch(error => {
+        if(error === undefined) {
+          throw new Parse.Error(Parse.Error.INVALID_CLASS_NAME, `Class ${className} does not exist.`);
+        } else {
+          throw error;
+        }
+      })
+  }
+
 
   validateNewClass(className, fields = {}, classLevelPermissions) {
     if (this.data[className]) {
@@ -394,6 +507,71 @@ export default class SchemaController {
   }
 
 
+  setPermissions(classname, perms, newSchema) {
+    if (typeof perms === 'undefined') {
+      return Promise.resolve();
+    }
+
+    validateCLP(perms, newSchema);
+    return this._dbAdapter.setClassLevelPermissions(classname, perms)
+      .then(() => this.reloadData({clearCache: true}));
+  }
+
+
+  // Returns a promise that resolves successfully to the new schema
+  // object if the provided className-fieldName-type tuple is valid.
+  // The className must already be validated.
+  // If 'freeze' is true, refuse to update the schema for this field.
+  enforceFieldExists(className, fieldName, type) {
+    if (fieldName.indexOf('.') > 0) {
+      fieldName = fieldName.split('.')[0];
+      type = 'Object';
+    }
+    if (!fieldNameIsValid(fieldName)) {
+      throw new Parse.Error(Parse.Error.INVALID_KEY_NAME, `Invalid field name: ${fieldName}.`);
+    }
+
+    if (!type){
+      return Promise.resolve(this);
+    }
+
+    return this.reloadData().then(() => {
+      const expectedType = this.getExpectedType(className, fieldName);
+      if (typeof type === 'string') {
+        type = {type};
+      }
+
+      if (expectedType) {
+        if (!dbTypeMatchesObjectType(expectedType, type)) {
+          throw new Parse.Error(
+            Parse.Error.INCORRECT_TYPE,
+            `schema mismatch for ${className}.${fieldName}; expected ${typeToString(expectedType)} but got ${typeToString(type)}`
+          );
+        }
+        return this;
+      }
+
+      return this._dbAdapter.addFieldIfNotExists(className, fieldName, type)
+        .then(() => {
+          return this.reloadData({clearCache: true});
+        }, () => {
+          //TODO: introspect the error and only reload if the error is one for which is makes sense to reload
+
+          // The update failed. This can be okay - it might have been a race
+          // condition where another client updated the schema in the same
+          // way that we wanted to. So, just reload the schema
+          return this.reloadData({clearCache: true});
+        }).then(() => {
+          if (!dbTypeMatchesObjectType(this.getExpectedType(className, fieldName),type)) {
+            throw new Parse.Error(Parse.Error.INVALID_JSON, `Could not add field ${fieldName}`);
+          }
+          this._cache.clear();
+          return this;
+        });
+    });
+  }
+
+
 
 
   // Returns the expected type for a className+key combination
@@ -416,6 +594,38 @@ export default class SchemaController {
 const load = (dbAdapter, schemaCache, options) => {
   const schema = new SchemaController(dbAdapter, schemaCache);
   return schema.reloadData(options).then(() => schema);
+}
+
+function buildMergedSchemaObject(existingFields, putRequest) {
+  const newSchema = {};
+  const sysSchemaField = Object.keys(defaultColumns).indexOf(existingFields._id) === -1 ? 
+    [] :
+    Object.keys(defaultColumns[existingFields._id]);
+  
+  for (const oldField in existingFields) {
+    if (oldField !== '_id' && oldField !== 'ACL' && oldField !== 'updatedAt' && oldField !== 'createdAt' && oldField !== 'objectId') {
+      if (sysSchemaField.length > 0 && sysSchemaField.indexOf(oldField) !== -1) {
+        continue;
+      }
+
+      const fieldIsDeleted = putRequest[oldField] && putRequest[oldField].__op === 'Delete';
+      if (!fieldIsDeleted) {
+        newSchema[oldField] = existingFields[oldField];
+      }
+    }
+  }
+
+  for (const newField in putRequest){
+
+    if (newField !== 'objectId' && putRequest[newField].__op !== 'Delete') {
+      if (sysSchemaField.length > 0 && sysSchemaField.indexOf(newField) !== -1) {
+        continue;
+      }
+      newSchema[newField] = putRequest[newField];
+    }
+  }
+
+  return newSchema;
 }
 
 

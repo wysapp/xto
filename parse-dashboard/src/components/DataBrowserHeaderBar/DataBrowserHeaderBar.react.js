@@ -17,7 +17,7 @@ import styles from 'components/DataBrowserHeaderBar/DataBrowserHeaderBar.scss';
 export default class DataBrowserHeaderBar extends React.Component {
 
   render(){
-    let { headers, readonly, onResize , updateOrdering} = this.props;
+    let { headers, onResize, selected, selectAll, onAddColumn, updateOrdering, readonly, handleDragDrop } = this.props;
 
     let elements = [
       // Note: bulk checkbox is disabled as all rows are selected (not just visible ones due to current lazy loading implementation)
@@ -82,6 +82,7 @@ export default class DataBrowserHeaderBar extends React.Component {
             href="javascript:;"
             role="button"
             className={styles.addColumnButton}
+            onClick={onAddColumn}
           >
             Add a new column
           </a>

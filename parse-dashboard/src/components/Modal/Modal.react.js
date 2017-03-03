@@ -5,17 +5,17 @@
  * This source code is licensed under the license found in the LICENSE file in
  * the root directory of this source tree.
  */
-import React from 'react';
-import PropTypes from 'lib/PropTypes';
-import Popover from 'components/Popover/Popover.react';
-import Icon from 'components/Icon/Icon.react';
-import Button from 'components/Button/Button.react';
-import Field from 'components/Field/Field.react';
-import Position from 'lib/Position';
-import styles from 'components/Modal/Modal.scss';
+import Button       from 'components/Button/Button.react';
+import Field        from 'components/Field/Field.react';
+import Icon         from 'components/Icon/Icon.react';
+import Popover      from 'components/Popover/Popover.react';
+import Label        from 'components/Label/Label.react';
+import Position     from 'lib/Position';
+import React        from 'react';
+import PropTypes    from 'lib/PropTypes';
+import styles       from 'components/Modal/Modal.scss';
 
-
-let origin = new Position(0,0);
+let origin = new Position(0, 0);
 let buttonColors = {
   danger: 'red',
   info: 'blue',
@@ -35,7 +35,7 @@ let Modal = (({
   showCancel = true,
   confirmText = 'Okay',
   onConfirm,
-  disalbed = false,
+  disabled = false,
   progress = false,
   customFooter,
   textModal = false,
@@ -45,7 +45,7 @@ let Modal = (({
   if (children) {
     children = React.Children.map(children, (c) => {
       if (c && c.type === Field && c.props.label) {
-        return React.cloneElement(c, {...c.props, labelPadding: 24});
+        return React.cloneElement(c, { ...c.props, labelPadding: 24 });
       }
       return c;
     });
@@ -53,41 +53,34 @@ let Modal = (({
 
   let footer = customFooter || (
     <div style={{textAlign: buttonsInCenter ? 'center' : 'right'}} className={styles.footer}>
-      {showCancel ? 
-        <Button value={cancelText} onClick={onCancel} disalbed={!canCancel} /> :
-        null
-      }
-      <Button 
+      {showCancel ? <Button
+        value={cancelText}
+        onClick={onCancel}
+        disabled={!canCancel} /> : null}
+      <Button
         primary={true}
         value={confirmText}
         color={buttonColors[type]}
-        disalbed={!!disalbed}
+        disabled={!!disabled}
         onClick={onConfirm}
-        progress={progress}
-      />
+        progress={progress} />
     </div>
   );
 
-  let wrappedChildren = textModal ? 
-    <div className={styles.textModal}>{children}</div> :
-    children;
-  
+  let wrappedChildren = textModal ? <div className={styles.textModal}>
+    {children}
+  </div> : children;
+
   return (
     <Popover fadeIn={true} fixed={true} position={origin} modal={true} color='rgba(17,13,17,0.8)'>
-      <div className={[styles.modal, styles[type]].join(' ')} style={{width}}>
+      <div className={[styles.modal, styles[type]].join(' ')} style={{ width }}>
         <div className={styles.header}>
-          <div 
-            style={{top: React.Children.count(subtitle) === 0 ? '37px' : '25px'}}
-            className={styles.title}
-          >
-            {title}
-          </div>
+          <div style={{top: React.Children.count(subtitle) === 0 ? '37px' : '25px'}} className={styles.title}>{title}</div>
           <div className={styles.subtitle}>{subtitle}</div>
-          {icon ? 
+          {icon ?
             <div className={styles.icon}>
-              <Icon width={iconSize} height={iconSize} name={icon} fill="#ffffff" />
-            </div> : null
-          }
+              <Icon width={iconSize} height={iconSize} name={icon} fill='#ffffff' />
+            </div> : null}
         </div>
         {wrappedChildren}
         {footer}
@@ -96,13 +89,11 @@ let Modal = (({
   );
 });
 
-
 Modal.Types = {
   DANGER: 'danger',
   INFO: 'info',
   VALID: 'valid'
 };
-
 
 Modal.propTypes = {
   type: PropTypes.string.describe('Used to change the color of the modal and buttons. Use Modal.Types.DANGER, Modal.Types.INFO, or Modal.Types.VALID.'),
