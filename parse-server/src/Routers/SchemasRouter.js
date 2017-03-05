@@ -47,6 +47,15 @@ function modifySchema(req) {
 
 }
 
+const deleteSchema = req => {
+  if (!SchemaController.classNameIsValid(req.params.className)) {
+    throw new Parse.Error(Parse.Error.INVALID_CLASS_NAME, SchemaController.invalidClassNameMessage(req.params.className));
+  }
+
+  return req.config.database.deleteSchema(req.params.className)
+  .then(() => ({response: {}}));
+}
+
 export class SchemasRouter extends PromiseRouter {
   mountRoutes() {
     this.route('GET', '/schemas', middleware.promiseEnforceMasterKeyAccess, getAllSchemas);
@@ -54,5 +63,6 @@ export class SchemasRouter extends PromiseRouter {
     this.route('POST', '/schemas/:className', middleware.promiseEnforceMasterKeyAccess, createSchema);
 
     this.route('PUT', '/schemas/:className', middleware.promiseEnforceMasterKeyAccess, modifySchema);
+    this.route('DELETE', '/schemas/:className', middleware.promiseEnforceMasterKeyAccess, deleteSchema);
   }
 }

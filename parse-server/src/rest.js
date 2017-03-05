@@ -11,6 +11,7 @@ var Parse = require('parse/node').Parse;
 import Auth from './Auth';
 
 var RestQuery = require('./RestQuery');
+var RestWrite = require('./RestWrite');
 var triggers = require('./triggers');
 
 function find(config, auth, className, restWhere, restOptions, clientSDK) {
@@ -26,6 +27,13 @@ function find(config, auth, className, restWhere, restOptions, clientSDK) {
 }
 
 
+function create(config, auth, className, restObject, clientSDK) {
+  enforceRoleSecurity('create', className, auth);
+  var write = new RestWrite(config, auth, className, null, restObject, null, clientSDK);
+  return write.execute();
+}
+
+
 // Disallowing access to the _Role collection except by master key
 function enforceRoleSecurity(method, className, auth) {
   if (className === '_Installation' && !auth.isMaster) {
@@ -38,5 +46,6 @@ function enforceRoleSecurity(method, className, auth) {
 
 
 module.exports = {
+  create,
   find,
 };

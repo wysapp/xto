@@ -16,7 +16,7 @@ import Option from'components/Dropdown/Option.react';
 import { SpecialClasses } from 'lib/Constants';
 
 function validClassName(name) {
-  !!name.match(/^[a-zA-Z][_a-zA-Z0-9]*$/);
+  return !!name.match(/^[a-zA-Z][_a-zA-Z0-9]*$/);
 }
 
 export default class CreateClassDialog extends React.Component {
@@ -29,6 +29,7 @@ export default class CreateClassDialog extends React.Component {
   }
 
   valid() {
+    
     if (this.state.type !== 'Custom') {
       return true;
     }

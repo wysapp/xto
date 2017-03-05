@@ -270,6 +270,15 @@ const injectDefaultSchema = ({className, fields, classLevelPermissions}) => ({
 });
 
 
+const dbTypeMatchesObjectType = (dbType, objectType) => {
+  if (dbType.type !== objectType.type) return false;
+  if (dbType.targetClass !== objectType.targetClass ) return false;
+  if (dbType === objectType.type) return true;
+  if (dbType.type === objectType.type) return true;
+  return false;
+}
+
+
 export default class SchemaController {
   _dbAdapter;
   data;
@@ -569,6 +578,50 @@ export default class SchemaController {
           return this;
         });
     });
+  }
+
+
+  // Delete a field, and remove that data from all objects. This is intended
+  // to remove unused fields, if other writers are writing objects that include
+  // this field, the field may reappear. Returns a Promise that resolves with
+  // no object on success, or rejects with { code, error } on failure.
+  // Passing the database and prefix is necessary in order to drop relation collections
+  // and remove fields from objects. Ideally the database would belong to
+  // a database adapter and this function would close over it or access it via member.
+  deleteField(fieldName, className, database) {
+    if (!classNameIsValid(className)) {
+      throw new Parse.Error(Parse.Error.INVALID_CLASS_NAME, invalidClassNameMessage(className));
+    }
+
+    if (!fieldNameIsValid(fieldName)) {
+      throw new Parse.Error(Parse.Error.INVALID_KEY_NAME, `invalid field name: ${fieldName}`); 
+    }
+
+    if (!fieldNameIsValidForClass(fieldName, className)) {
+      throw new Parse.Error(136, `field ${fieldName} cannot be changed`);
+    }
+
+    return this.getOneSchema(className, false, {clearCache: true})
+      .catch(error => {
+        if (error === undefined) {
+          throw new Parse.Error(Parse.Error.INVALID_CLASS_NAME, `Class ${className} does not exist.`);
+        } else {
+          throw error;
+        }
+      })
+      .then(schema => {
+        if (!schema.fields[fieldName]) {
+          throw new Parse.Error(255, `Field ${fieldName} does not exist, cannot delete.`);
+        }
+        if (schema.fields[fieldName].type === 'Relation') {
+          return database.adapter.deleteFields(className, schema, [fieldName])
+            .then(() => database.adapter.deleteClass(`_Join:${FieldName}:${className}`));
+        }
+        return database.adapter.deleteFields(className, schema, [fieldName]);
+      })
+      .then(() => {
+        this._cache.clear();
+      });
   }
 
 

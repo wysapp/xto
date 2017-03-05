@@ -16,6 +16,8 @@ import Parse from 'parse';
 import DataBrowser from 'dashboard/Data/Browser/DataBrowser.react';
 import CreateClassDialog from 'dashboard/Data/Browser/CreateClassDialog.react';
 import AddColumnDialog from 'dashboard/Data/Browser/AddColumnDialog.react';
+import RemoveColumnDialog from 'dashboard/Data/Browser/RemoveColumnDialog.react';
+import DropClassDialog from 'dashboard/Data/Browser/DropClassDialog.react';
 import Notification from 'dashboard/Data/Browser/Notification.react';
 import CategoryList from 'components/CategoryList/CategoryList.react';
 import EmptyState from 'components/EmptyState/EmptyState.react';
@@ -69,7 +71,10 @@ export default class Browser extends DashboardView {
     this.prefetchData = this.prefetchData.bind(this);
     this.fetchData = this.fetchData.bind(this);
     this.updateFilters = this.updateFilters.bind(this);
+    this.showRemoveColumn = this.showRemoveColumn.bind(this);
+    this.showDropClass = this.showDropClass.bind(this);
 
+    this.updateRow = this.updateRow.bind(this);
     this.updateOrdering = this.updateOrdering.bind(this);
     this.showAddColumn = this.showAddColumn.bind(this);
     this.addRow = this.addRow.bind(this);
@@ -78,6 +83,7 @@ export default class Browser extends DashboardView {
     this.createClass = this.createClass.bind(this);
 
     this.addColumn = this.addColumn.bind(this);
+    this.removeColumn = this.removeColumn.bind(this);
     
   }
 
@@ -179,6 +185,15 @@ export default class Browser extends DashboardView {
     this.setState({ showAddColumnDialog: true });
   }
 
+  showRemoveColumn() {
+    this.setState({ showRemoveColumnDialog: true });
+  }
+
+
+  showDropClass() {
+    this.setState({showDropClassDialog: true});
+  }
+
 
   createClass(className) {
     this.props.schema.dispatch(ActionTypes.CREATE_CLASS, {className})
@@ -188,6 +203,22 @@ export default class Browser extends DashboardView {
       }).always(() => {
         this.setState({ showCreateClassDialog: false});
       })
+  }
+
+
+  dropClass(className) {
+    this.props.schema.dispatch(ActionTypes.DROP_CLASS, { className }).then(() => {
+      this.setState({showDropClassDialog: false});
+      delete this.state.counts[className];
+      history.push(this.context.generatePath('browser'));
+    }, (error) => {
+      
+      let msg = typeof error === 'string' ? error : error.message;
+      if (msg) {
+        msg = msg[0].toUpperCase() + msg.substr(1);
+      }
+      this.setState({lastError: msg});
+    })
   }
 
   addColumn(type, name, target) {
@@ -214,6 +245,23 @@ export default class Browser extends DashboardView {
         )
       });
     }
+  }
+
+
+  removeColumn(name) {
+    let payload = {
+      className: this.props.params.className,
+      name: name
+    };
+
+    this.props.schema.dispatch(ActionTypes.DROP_COLUMN, payload)
+      .always(() => {
+        let state = { showRemoveColumnDialog: false };
+        if (this.state.ordering === name || this.state.ordering === '-' + name) {
+          state.ordering = '-createdAt';
+        }
+        this.setState(state);
+      });
   }
 
 
@@ -288,6 +336,100 @@ export default class Browser extends DashboardView {
   }
 
 
+  updateRow(row, attr, value) {
+    
+    const isNewObject = row < 0;
+    const obj = isNewObject ? this.state.newObject : this.state.data[row];
+    if (!obj) {
+      return;
+    }
+    const prev = obj.get(attr);
+    if (value === prev) {
+      return;
+    }
+
+    if (value === undefined) {
+      obj.unset(attr);
+    } else {
+      obj.set(attr, value);
+    }
+
+    obj.save(null, { useMasterKey: true}).then(() => {
+      const state = { data: this.state.data, lastError: null };
+      if (isNewObject) {
+        const relation = this.state.relation;
+        if (relation) {
+          const parent = relation.parent;
+          const parentRelation = parent.relation(relation.key);
+          parentRelation.add(obj);
+
+          const targetClassName = relation.targetClassName;
+          parent.save(null, { useMasterKey: true}).then(() => {
+            this.setState({
+              newObject: null,
+              data: [
+                obj,
+                ...this.state.data,
+              ],
+              relationCount: this.state.relationCount + 1,
+              counts: {
+                ...this.state.counts,
+                [targetClassName]: this.state.counts[targetClassName] + 1,
+              },
+            });
+          }, (error) => {
+            let msg = typeof error === 'string' ? error : error.message;
+            if (msg ) {
+              msg = msg[0].toUpperCase() + msg.substr(1);
+            }
+            obj.set(attr, prev);
+            this.setState({ data: this.state.data, lastError: msg });
+          });
+        } else {
+          state.newObject = null;
+          if (this.props.params.className === obj.className) {
+            this.state.data.unshift(obj);
+          }
+          this.state.counts[obj.className] += 1;
+        }
+      }
+      this.setState(state);
+    }, (error) => {
+      let msg = typeof error === 'string' ? error : error.message;
+      if (msg) {
+        msg = msg[0].toUpperCase() + msg.substr(1);
+      }
+      if (!isNewObject) {
+        obj.set(attr, prev);
+        this.setState({ data: this.state.data, lastError: msg });
+      } else {
+        this.setState({ lastError: msg });
+      }
+    });
+  }
+
+
+  getClassColumns(className, onlyTouchable =true) {
+    let columns = [];
+    const classes = this.props.schema.data.get('classes');
+    classes.get(className).forEach((field, name) => {
+      columns.push({
+        ...field,
+        name,
+      });
+    });
+
+
+    if (onlyTouchable) {
+      let untouchable = DefaultColumns.All;
+      if (className[0] === '_' && DefaultColumns[className]) {
+        untouchable = untouchable.concat(DefaultColumns[className]);
+      }
+      columns = columns.filter((column) => untouchable.indexOf(column.name) === -1);
+    }
+
+    return columns;
+  }
 
 
   renderSidebar() {
@@ -398,6 +540,9 @@ export default class Browser extends DashboardView {
             userPointers={userPointers}
             filters={this.state.filters}
             onFilterChange={this.updateFilters}
+            onRemoveColumn={this.showRemoveColumn}
+
+            onDropClass={this.showDropClass}
 
             columns={columns}
             className={className}
@@ -408,13 +553,13 @@ export default class Browser extends DashboardView {
             
 
             relation={this.state.relation}
+            updateRow={this.updateRow}
             updateOrdering={this.updateOrdering}
             onAddColumn={this.showAddColumn}
             onAddRow={this.addRow}
+            onAddClass={this.showCreateClass}
 
-          >
-
-          </DataBrowser>
+          />
         );
       }
     }
@@ -441,6 +586,26 @@ export default class Browser extends DashboardView {
           classes={this.props.schema.data.get('classes').keySeq().toArray()}
           onCancel={() => this.setState({showAddColumnDialog: false})}
           onConfirm={this.addColumn}
+        />
+      );
+    } else if (this.state.showRemoveColumnDialog) {
+      let currentColumns = this.getClassColumns(className).map(column => column.name);
+      extras = (
+        <RemoveColumnDialog 
+          currentColumns={currentColumns}
+          onCancel={() => this.setState({showRemoveColumnDialog: false})}
+          onConfirm={this.removeColumn}
+        />
+      );
+    } else if (this.state.showDropClassDialog) {
+      extras = (
+        <DropClassDialog 
+          className={className}
+          onCancel={() => this.setState({
+            showDropClassDialog: false,
+            lastError: null,
+          })}
+          onConfirm={() => this.dropClass(className)}
         />
       );
     }

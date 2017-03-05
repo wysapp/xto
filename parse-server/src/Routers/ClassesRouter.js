@@ -65,6 +65,12 @@ export class ClassesRouter extends PromiseRouter {
   }
 
 
+  handleCreate(req) {
+    
+    return rest.create(req.config, req.auth, req.params.className, req.body, req.info.clientSDK);
+  }
+
+
   static JSONFromQuery(query) {
     const json = {};
     for (const [key, value] of _.entries(query)) {

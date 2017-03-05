@@ -57,4 +57,27 @@ export default class MongoCollection {
   insertOne(object) {
     return this._mongoCollection.insertOne(object);
   }
+
+  
+  // Atomically updates data in the database for a single (first) object that matched the query
+  // If there is nothing that matches the query - does insert
+  // Postgres Note: `INSERT ... ON CONFLICT UPDATE` that is available since 9.5.
+  upsertOne(query, update){
+    return this._mongoCollection.update(query, update, {upsert: true});
+  }
+
+  updateOne(query, update) {
+    return this._mongoCollection.updateOne(query, update);
+  }
+
+
+  updateMany(query, update) {
+    return this._mongoCollection.updateMany(query, update);
+  }
+
+
+  drop() {
+    return this._mongoCollection.drop();
+  }
+
 }

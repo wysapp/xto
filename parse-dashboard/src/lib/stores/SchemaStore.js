@@ -63,6 +63,18 @@ function SchemaStore(state, action) {
         .setIn(['CLPs', action.className], Map({}));
       });
     
+    case ActionTypes.DROP_CLASS:
+      return action.app.apiRequest(
+        'DELETE',
+        'schemas/' + action.className,
+        {},
+        { useMasterKey: true }
+      ).then(() => {
+        return state
+          .deleteIn(['classes', action.className])
+          .deleteIn(['CLPs', action.className]);
+      });
+
     case ActionTypes.ADD_COLUMN:
       let newField = {
         [action.name]: {
@@ -78,6 +90,22 @@ function SchemaStore(state, action) {
         'PUT',
         'schemas/' + action.className,
         {className: action.className, fields: newField},
+        { useMasterKey: true }
+      ).then(({fields}) => {
+        return state.setIn(['classes', action.className], Map(fields));
+      });
+    
+    case ActionTypes.DROP_COLUMN:
+      let droppedField = {
+        [action.name]: {
+          __op: 'Delete'
+        }
+      };
+
+      return action.app.apiRequest(
+        'PUT',
+        'schemas/' + action.className,
+        { className: action.className, fields: droppedField },
         { useMasterKey: true }
       ).then(({fields}) => {
         return state.setIn(['classes', action.className], Map(fields));

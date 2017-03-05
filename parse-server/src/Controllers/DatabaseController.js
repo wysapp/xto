@@ -74,6 +74,11 @@ function DatabaseController(adapter, schemaCache) {
 }
 
 
+DatabaseController.prototype.collectionExists = function(className) {
+  return this.adapter.classExists(className);
+}
+
+
 DatabaseController.prototype.loadSchema = function(options = {clearCache: false}) {
   if (!this.schemaPromise) {
     this.schemaPromise = SchemaController.load(this.adapter, this.schemaCache, options);
@@ -341,6 +346,37 @@ DatabaseController.prototype.find = function(className, query, {
       });
     });
   });
+}
+
+
+DatabaseController.prototype.deleteSchema = function(className) {
+  return this.loadSchema(true)
+  .then(schemaController => schemaController.getOneSchema(className, true))
+  .catch(error => {
+    if (error === undefined) {
+      return { fields: {} };
+    } else {
+      throw error;
+    }
+  })
+  .then(schema => {
+    return this.collectionExists(className)
+    .then(() => this.adapter.count(className, { fields: {} }))
+    .then( count => {
+      if (count > 0) {
+        throw new Parse.Error(255, `Class ${className} is not empty, contains ${count} object, cannot drop schema.`);
+      }
+      return this.adapter.deleteClass(className);
+    })
+    .then(wasParseCollection => {
+      if (wasParseCollection) {
+        const relationFieldNames = Object.keys(schema.fields).filter(fieldName => schema.fields[fieldName].type === 'Relation');
+        return Promise.all(relationFieldNames.map(name => this.adapter.deleteClass(joinTableName(className, name))));
+      } else {
+        return Promise.resolve();
+      }
+    });
+  })
 }
 
 

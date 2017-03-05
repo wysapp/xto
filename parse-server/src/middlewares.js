@@ -253,7 +253,7 @@ export function handleParseErrors(err, req, res, next) {
     next(err);
   } else {
     log.error('Uncaught internal server error.', err, err.stack);
-    res.status(500);
+    res.status(500);    
     res.json({
       code: Parse.Error.INTERNAL_SERVER_ERROR,
       message: 'Internal server error.'

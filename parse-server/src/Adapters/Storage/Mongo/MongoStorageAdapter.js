@@ -127,6 +127,15 @@ export class MongoStorageAdapter {
   }
 
 
+  classExists(name) {
+    return this.connect().then(() => {
+      return this.database.listCollections({ name: this._collectionPrefix + name}).toArray();
+    }).then(collections => {
+      return collections.length > 0;
+    });
+  }
+
+
   createClass(className, schema) {
     
     schema = convertParseSchemaToMongoSchema(schema);
@@ -145,6 +154,76 @@ export class MongoStorageAdapter {
       });
 
   }
+
+
+  addFieldIfNotExists(className, fieldName, type) {
+    return this._schemaCollection()
+      .then(schemaCollection => schemaCollection.addFieldIfNotExists(className, fieldName, type));
+  }
+
+
+  // Drops a collection. Resolves with true if it was a Parse Schema (eg. _User, Custom, etc.)
+  // and resolves with false if it wasn't (eg. a join table). Rejects if deletion was impossible.
+  deleteClass(className) {
+    return this._adaptiveCollection(className)
+    .then(collection => collection.drop())
+    .catch(error => {
+      if (error.message == 'ns not found') {
+        return;
+      }
+      throw error;
+    })
+    .then(() => this._schemaCollection())
+    .then( schemaCollection => schemaCollection.findAndDeleteSchema(className))
+  }
+
+
+
+  // Remove the column and all the data. For Relations, the _Join collection is handled
+  // specially, this function does not delete _Join columns. It should, however, indicate
+  // that the relation fields does not exist anymore. In mongo, this means removing it from
+  // the _SCHEMA collection.  There should be no actual data in the collection under the same name
+  // as the relation column, so it's fine to attempt to delete it. If the fields listed to be
+  // deleted do not exist, this function should return successfully anyways. Checking for
+  // attempts to delete non-existent fields is the responsibility of Parse Server.
+
+  // Pointer field names are passed for legacy reasons: the original mongo
+  // format stored pointer field names differently in the database, and therefore
+  // needed to know the type of the field before it could delete it. Future database
+  // adatpers should ignore the pointerFieldNames argument. All the field names are in
+  // fieldNames, they show up additionally in the pointerFieldNames database for use
+  // by the mongo adapter, which deals with the legacy mongo format.
+
+  // This function is not obligated to delete fields atomically. It is given the field
+  // names in a list so that databases that are capable of deleting fields atomically
+  // may do so.
+
+  // Returns a Promise.
+  deleteFields(className, schema, fieldNames) {
+    const mongoFormatNames = fieldNames.map(fieldName => {
+      if (schema.fields[fieldName].type === 'Pointer') {
+        return `_p_${fieldName}`;
+      } else {
+        return fieldName;
+      }
+    });
+
+    const collectionUpdate = { '$unset': {}};
+    mongoFormatNames.forEach(name => {
+      collectionUpdate['$unset'][name] = null;
+    });
+
+    const schemaUpdate = { '$unset': {}};
+    fieldNames.forEach(name => {
+      schemaUpdate['$unset'][name] = null;
+    });
+
+    return this._adaptiveCollection(className)
+      .then(collection => collection.updateMany({}, collectionUpdate))
+      .then(() => this._schemaCollection())
+      .then(schemaCollection => schemaCollection.updateSchema(className, schemaUpdate));
+  }
+
 
 
   // Return a promise for all schemas known to this adapter, in Parse format. In case the

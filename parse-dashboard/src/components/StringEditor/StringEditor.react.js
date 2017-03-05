@@ -15,6 +15,23 @@ export default class StringEditor extends React.Component {
     this.state = {
       value: props.value || ''
     };
+
+    this.checkExternalClick = this.checkExternalClick.bind(this);
+  }
+
+  componentDidMount() {
+    this.refs.input.setSelectionRange(0, this.state.value.length);
+    document.body.addEventListener('click', this.checkExternalClick);
+  }
+
+  componentWillUnmount() {
+    document.body.removeEventListener('click', this.checkExternalClick);
+  }
+
+  checkExternalClick(e) {
+    if (e.target !== this.refs.input) {
+      this.props.onCommit(this.state.value);
+    }
   }
 
   render() {
