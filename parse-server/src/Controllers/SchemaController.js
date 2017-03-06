@@ -109,6 +109,11 @@ const defaultColumns = Object.freeze({
 });
 
 
+const requiredColumns = Object.freeze({
+  _Product: ["productIdentifier", "icon", "order", "title", "subtitle"],
+  _Role: ["name", "ACL"]
+});
+
 const systemClasses = Object.freeze(['_User', '_Installation', '_Role', '_Session', '_Product', '_PushStatus', '_JobStatus']);
 
 
@@ -464,6 +469,33 @@ export default class SchemaController {
   }
 
 
+  enforceClassExists(className) {
+    if (this.data[className]) {
+      return Promise.resolve(this);
+    }
+
+    return this.addClassIfNotExists(className)
+    .then(() => this.reloadData({ clearCache: true }))
+    .catch(() => {
+      // The schema update failed. This can be okay - it might
+      // have failed because there's a race condition and a different
+      // client is making the exact same schema update that we want.
+      // So just reload the schema.
+      return this.reloadData({ clearCache: true });
+    })
+    .then(() => {
+      if (this.data[className]) {
+        return this;
+      } else {
+        throw new Parse.Error(Parse.Error.INVALID_JSON, `Failed to add ${className}`);
+      }
+    })
+    .catch(()=> {
+      throw new Parse.Error(Parse.Error.INVALID_JSON, 'schema class name does not revalidate');
+    });
+  }
+
+
   validateNewClass(className, fields = {}, classLevelPermissions) {
     if (this.data[className]) {
       throw new Parse.Error(Parse.Error.INVALID_CLASS_NAME, `Class ${className} already exists.`);
@@ -516,13 +548,13 @@ export default class SchemaController {
   }
 
 
-  setPermissions(classname, perms, newSchema) {
+  setPermissions(className, perms, newSchema) {
     if (typeof perms === 'undefined') {
       return Promise.resolve();
     }
 
     validateCLP(perms, newSchema);
-    return this._dbAdapter.setClassLevelPermissions(classname, perms)
+    return this._dbAdapter.setClassLevelPermissions(className, perms)
       .then(() => this.reloadData({clearCache: true}));
   }
 
@@ -662,6 +694,32 @@ export default class SchemaController {
   }
 
 
+  validateRequiredColumns(className, object, query) {
+    const columns = requiredColumns[className];
+    if (!columns || columns.length == 0) {
+      return Promise.resolve(this);
+    }
+
+    const missingColumns = columns.filter(function(column) {
+      if (query && query.objectId) {
+        if (object[column] && typeof object[column] === 'object') {
+          return object[column].__op = 'Delete';
+        }
+        return false;
+      }
+      return !object[column];
+    });
+
+    if (missingColumns.length > 0) {
+      throw new Parse.Error(
+        Parse.Error.INCORRECT_TYPE,
+        missingColumns[0] + ' is required.'
+      );
+    }
+    return Promise.resolve();
+  }
+
+
   // Returns the expected type for a className+key combination
   // or undefined if the schema is not set
   getExpectedType(className, fieldName) {
@@ -717,6 +775,113 @@ function buildMergedSchemaObject(existingFields, putRequest) {
 }
 
 
+function thenValidateRequiredColumns(schemaPromise, className, object, query) {
+  return schemaPromise.then((schema) => {
+    return schema.validateRequiredColumns(className, object, query);
+  })
+}
+
+
+function getType(obj) {
+  const type = typeof obj;
+  switch(type) {
+  case 'boolean':
+    return 'Boolean';
+  case 'string':
+    return 'String';
+  case 'number':
+    return 'Number';
+  case 'map':
+  case 'object':
+    if (!obj) {
+      return undefined;
+    }
+    return getObjectType(obj);
+  case 'function':
+  case 'symbol':
+  case 'undefined':
+  default:
+    throw 'bad obj: ' + obj;
+  }
+}
+
+
+function getObjectType(obj) {
+  if (obj instanceof Array) {
+    return 'Array';
+  }
+
+  if (obj.__type) {
+    switch(obj.__type) {
+    case 'Pointer':
+      if (obj.className) {
+        return {
+          type: 'Pointer',
+          targetClass: obj.className
+        }
+      }
+      break;
+    case 'Relation':
+      if (obj.className) {
+        return {
+          type: 'Relation',
+          targetClass: obj.className
+        }
+      }
+      break;
+    case 'File':
+      if (obj.name) {
+        return 'File';
+      }
+      break;
+    case 'Date':
+      if (obj.iso) {
+        return 'Date';
+      }
+      break;
+    case 'GeoPoint':
+      if(obj.latitude != null && obj.longitude != null) {
+        return 'GeoPoint';
+      }
+      break;
+    case 'Bytes':
+      if (obj.base64) {
+        return;
+      }
+      break;
+    }
+    throw new Parse.Error(Parse.Error.INCORRECT_TYPE, "This is not a valid " + obj.__type);
+  }
+
+  if (obj['$ne']) {
+    return getObjectType(obj['$ne']);
+  }
+
+  if (obj.__op) {
+    switch(obj.__op) {
+    case 'Increment':
+      return 'Number';
+    case 'Delete':
+      return null;
+    case 'Add':
+    case 'AddUnique':
+    case 'Remove':
+      return 'Array';
+    case 'AddRelation':
+    case 'RemoveRelation':
+      return {
+        type: 'Relation',
+        targetClass: obj.objects[0].className
+      }
+    case 'Batch':
+      return getObjectType(obj.ops[0]);
+    default:
+      throw 'unexpected op: ' + obj.__op;
+    }
+  }
+  return 'Object';
+}
+
 export {
   load,
   classNameIsValid,
@@ -724,4 +889,5 @@ export {
 
   systemClasses,
   defaultColumns,
+  convertSchemaToAdapterSchema,
 }

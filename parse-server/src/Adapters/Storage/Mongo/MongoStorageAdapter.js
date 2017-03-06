@@ -8,6 +8,7 @@ import {
 
 
 import {
+  parseObjectToMongoObjectForCreate,
   transformKey,
   transformWhere
 } from './MongoTransform';
@@ -237,6 +238,23 @@ export class MongoStorageAdapter {
   getClass(className) {
     return this._schemaCollection()
     .then(schemasCollection => schemasCollection._fechOneSchemaFrom_SCHEMA(className));
+  }
+
+
+  // TODO: As yet not particularly well specified. Creates an object. Maybe shouldn't even need the schema,
+  // and should infer from the type. Or maybe does need the schema for validations. Or maybe needs
+  // the schem only for the legacy mongo format. We'll figure that out later.
+  createObject(className, schema, object) {
+    schema = convertParseSchemaToMongoSchema(schema);
+    const mongoObject = parseObjectToMongoObjectForCreate(className, object, schema);
+    return this._adaptiveCollection(className)
+    .then(collection => collection.insertOne(mongoObject))
+    .catch(error => {
+      if (error.code === 11000) { // Duplicate value
+          throw new Parse.Error(Parse.Error.DUPLICATE_VALUE, 'A duplicate value for a field with unique values was provided');
+      }
+      throw error;
+    });
   }
 
   find(className, schema, query, {skip, limit,sort, keys}) {

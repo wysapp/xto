@@ -24,6 +24,26 @@ function addReadACL(query, acl) {
 }
 
 
+const transformObjectACL = ({ACL, ...result}) => {
+  if (!ACL) {
+    return result;
+  }
+
+  result._wperm = [];
+  result._rperm = [];
+
+  for (const entry in ACL) {
+    if (ACL[entry].read) {
+      result._rperm.push(entry);
+    }
+    if (ACL[entry].write) {
+      result._wperm.push(entry);
+    }
+  }
+  return result;
+}
+
+
 const specialQuerykeys = ['$and', '$or', '_rperm', '_wperm', '_perishable_token', '_email_verify_token', '_email_verify_token_expires_at', '_account_lockout_expires_at', '_failed_login_count'];
 
 const isSpecialQueryKey = key => {
@@ -79,6 +99,14 @@ DatabaseController.prototype.collectionExists = function(className) {
 }
 
 
+DatabaseController.prototype.validateClassName = function(className) {
+  if (!SchemaController.classNameIsValid(className)) {
+    return Promise.reject(new Parse.Error(Parse.Error.INVALID_CLASS_NAME, 'invalid className: '+ className));
+  }
+  return Promise.resolve();
+}
+
+
 DatabaseController.prototype.loadSchema = function(options = {clearCache: false}) {
   if (!this.schemaPromise) {
     this.schemaPromise = SchemaController.load(this.adapter, this.schemaCache, options);
@@ -118,9 +146,135 @@ DatabaseController.prototype.validateObject = function(className, object, query,
   })
 }
 
+
+DatabaseController.prototype.handleRelationUpdates = function(className, objectId, update) {
+  var pending = [];
+  var deleteMe = [];
+  objectId = update.objectId || objectId;
+
+  var process = (op, key) => {
+    if (!op) {
+      return;
+    }
+    if (op.__op == 'AddRelation') {
+      for (const object of op.objects) {
+        pending.push(this.addRelation(key, className, objectId, object.objectId));
+      }
+      deleteMe.push(key);
+    }
+
+    if (op.__op == 'RemoveRelation') {
+      for (const object of op.objects) {
+        pending.push(this.removeRelation(key, className, objectId, object.objectId));
+      }
+      deleteMe.push(key);
+    }
+
+    if (op.__op == 'Batch') {
+      for (var x of op.ops) {
+        process(x, key);
+      }
+    }
+  };
+
+  for (const key in update) {
+    process(update[key], key);
+  }
+
+  for (const key of deleteMe) {
+    delete update[key];
+  }
+  return Promise.all(pending);
+}
+
 // Adds a relation.
 // Returns a promise that resolves successfully iff the add was successful.
 const relationSchema = { fields: { relatedId: { type: 'String'}, owningId: {type: 'String'}}};
+
+
+const flattenUpdateOperatorsForCreate = object => {
+  for (const key in object) {
+    if (object[key] && object[key].__op) {
+      switch(object[key].__op) {
+      case 'Increment':
+        if (typeof object[key].amount !== 'number') {
+          throw new Parse.Error(Parse.Error.INVALID_JSON, 'objects to add must be an array');
+        }
+        object[key] = object[key].amount;
+        break;
+      case 'Add':
+        if (!(object[key].objects instanceof Array)) {
+          throw new Parse.Error(Parse.Error.INVALID_JSON, 'objects to add must be an array');
+        }
+        object[key] = object[key].objects;
+        break;
+      case 'AddUnique':
+        if (!(object[key].objects instanceof Array)) {
+          throw new Parse.Error(Parse.Error.INVALID_JSON, 'objects to add must be an array');
+        }
+        object[key] = object[key].objects;
+        break;
+      case 'Remove':
+        if (!(object[key].objects instanceof Array)) {
+          throw new Parse.Error(Parse.Error.INVALID_JSON, 'objects to add must be an array');          
+        }
+        object[key] = [];
+        break;
+      case 'Delete':
+        delete object[key];
+        break;
+      default:
+        throw new Parse.Error(Parse.Error.COMMAND_UNAVAILABLE, `The ${object[key].__op} operator is not supported yet.`);
+      }
+    }
+  }
+}
+
+const transformAuthData = function(className, object, schema) {
+  if (object.authData && className === '_User') {
+    Object.keys(object.authData).forEach(provider => {
+      const providerData = object.authData[provider];
+      const fieldName = `_auth_data_${provider}`;
+      if (providerData == null) {
+        object[fieldName] = {
+          __op: 'Delete'
+        }
+      } else {
+        object[fieldName] = providerData;
+        schema.fields[fieldName] = { type: 'Object' };
+      }
+    });
+    delete object.authData;
+  }
+}
+
+
+DatabaseController.prototype.create = function(className, object, { acl } = {}) {
+  const originalObject = object;
+  object = transformObjectACL(object);
+
+  object.createdAt = { iso: object.createdAt, __type: 'Date' };
+  object.updatedAt = { iso: object.updatedAt, __type: 'Date' };
+
+  var isMaster = acl === undefined;
+  var aclGroup = acl || [];
+
+  return this.validateClassName(className)
+  .then(() => this.loadSchema())
+  .then(schemaController => {
+    return (isMaster ? Promise.resolve() : schemaController.validatePermission(className, aclGroup, 'create'))
+    .then(() => this.handleRelationUpdates(className, null, object))
+    .then(() => schemaController.enforceClassExists(className))
+    .then(() => schemaController.reloadData())
+    .then(() => schemaController.getOneSchema(className, true))
+    .then(schema => {
+      transformAuthData(className, object, schema);
+      flattenUpdateOperatorsForCreate(object);
+      return this.adapter.createObject(className, SchemaController.convertSchemaToAdapterSchema(schema), object);
+    })
+    .then(result => sanitizeDatabaseResult(originalObject, result.ops[0]));
+  })
+}
 
 
 DatabaseController.prototype.relatedIds = function(className, key, owningId) {
