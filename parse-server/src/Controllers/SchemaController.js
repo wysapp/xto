@@ -624,7 +624,42 @@ export default class SchemaController {
       });
   }
 
+  // Validates an object provided in REST format.
+  // Returns a promise that resolves to the new schema if this object is
+  // valid.
+  validateObject(className, object, query) {
+    let geocount = 0;
+    let promise = this.enforceClassExists(className);
+    for (const fieldName in object) {
+      if (object[fieldName] === undefined) {
+        continue;
+      }
+      const expected = getType(object[fieldName]);
+      if (expected === 'GeoPoint') {
+        geocount++;
+      }
+      if (geocount > 1) {
+        // Make sure all field validation operations run before we return.
+        // If not - we are continuing to run logic, but already provided response from the server.
+        return promise.then(() => {
+          return Promise.reject(new Parse.Error(Parse.Error.INCORRECT_TYPE, 'there can only be one geopoint field in a class'));
+        });
+      }
 
+      if (!expected) {
+        continue;
+      }
+
+      if (fieldName === 'ACL') {
+        continue;
+      }
+
+      promise = promise.then(schema => schema.enforceFieldExists(className, fieldName, expected));
+    }
+
+    promise = thenValidateRequiredColumns(promise, className, object, query);
+    return promise;
+  }
 
 
   // Returns the expected type for a className+key combination

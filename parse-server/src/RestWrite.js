@@ -55,6 +55,26 @@ RestWrite.prototype.execute = function() {
     return this.validateAuthData();
   }).then(() => {
     return this.runBeforeTrigger();
+  }).then(() => {
+    return this.validateSchema();
+  }).then(() => {
+    return this.setRequiredFieldsIfNeeded();
+  }).then(() => {
+    return this.transformUser();
+  }).then(() => {
+    return this.expandFilesForExistingObjects();
+  }).then(() => {
+    return this.runDatabaseOperation();
+  }).then(() => {
+    return this.createSessionTokenIfNeeded();
+  }).then(() => {
+    return this.handleFollowup();
+  }).then(() => {
+    return this.runAfterTrigger();
+  }).then(() => {
+    return this.clearUserAuthData();
+  }).then(() => {
+    return this.response;
   })
 };
 
@@ -90,6 +110,11 @@ RestWrite.prototype.validateClientClassCreation = function() {
     return Promise.resolve();
   }
 };
+
+
+RestWrite.prototype.validateSchema = function() {
+  return this.config.database.validateObject(this.className, this.data, this.query, this.runOptions);
+}
 
 
 RestWrite.prototype.runBeforeTrigger = function() {
@@ -134,6 +159,21 @@ RestWrite.prototype.runBeforeTrigger = function() {
 };
 
 
+RestWrite.prototype.setRequiredFieldsIfNeeded = function() {
+  if (this.data) {
+    this.data.updatedAt = this.updatedAt;
+    if (!this.query) {
+      this.data.createdAt = this.updatedAt;
+
+      if (!this.data.objectId) {
+        this.data.objectId = cryptoUtils.newObjectId();
+      }
+    }
+  }
+  return Promise.resolve();
+}
+
+
 
 // Transforms auth data for a user object.
 // Does nothing if this isn't a user object.
@@ -169,6 +209,90 @@ RestWrite.prototype.validateAuthData = function() {
     }
   }
   throw new Parse.Error(Parse.Error.UNSUPPORTED_SERVICE, 'This authentication method is unsupported.');
+}
+
+
+RestWrite.prototype.transformUser = function() {
+  var promise = Promise.resolve();
+
+  if (this.className !== '_User') {
+    return promise;
+  }
+
+  if (this.query) {
+    promise = new RestQuery(this.config, Auth.master(this.config), '_Session', {
+      user: {
+        __type: 'Pointer',
+        className: '_User',
+        objectId: this.objectId(),
+      }
+    }).execute()
+      .then(results => {
+        results.results.forEach(session => this.config.cacheController.user.del(session.sessionToken));
+      });
+  }
+
+  return promise.then(() => {
+    if (!this.data.password) {
+      return Promise.resolve();
+    }
+
+    if (this.query && !this.auth.isMaster) {
+      this.storage['clearSessions'] = true;
+      this.storage['generateNewSession'] = true;
+    }
+
+    return this._validatePasswordPolicy().then(() => {
+      return passwordCrypto.hash(this.data.password).then((hashedPassword) => {
+        this.data._hashed_password = hashedPassword;
+        delete this.data.password;
+      });
+    });
+  }).then(() => {
+    return this._validateUserName();
+  }).then(() => {
+    return this._validateEmail();
+  });
+}
+
+
+RestWrite.prototype.createSessionTokenIfNeeded = function() {
+  if (this.className !== '_User') {
+    return;
+  }
+  if (this.query) {
+    return;
+  }
+  return this.createSessionToken();
+}
+
+// Handles any followup logic
+RestWrite.prototype.handleFollowup = function() {
+  if (this.storage && this.storage['clearSessions'] && this.config.revokeSessionOnPasswordReset) {
+    var sessionQuery = {
+      user: {
+        __type: 'Pointer',
+        className: '_User',
+        objectId: this.objectId()
+      }
+    };
+    delete this.storage['clearSessions'];
+    return this.config.database.destroy('_Session', sessionQuery)
+    .then(this.handleFollowup.bind(this));
+  }
+
+  if (this.storage && this.storage['generateNewSession']) {
+    delete this.storage['generateNewSession'];
+    return this.createSessionToken()
+    .then(this.handleFollowup.bind(this));
+  }
+
+  if (this.storage && this.storage['sendVerificationEmail']) {
+    delete this.storage['sendVerificationEmail'];
+
+    this.config.userController.sendVerificationEmail(this.data);
+    return this.handleFollowup.bind(this);
+  }
 }
 
 
@@ -446,6 +570,207 @@ RestWrite.prototype.handleInstallation = function() {
   return promise;
 };
 
+
+RestWrite.prototype.expandFilesForExistingObjects = function() {
+  // Check whether we have a short-circuited response - only then run expansion.
+  if (this.response && this.response.response) {
+    this.config.filesController.expandFilesInObject(this.config, this.response.response);
+  }
+}
+
+
+RestWrite.prototype.runDatabaseOperation = function() {
+  if (this.response) {
+    return;
+  }
+
+  if (this.className === '_Role') {
+    this.config.cacheController.role.clear();
+  }
+
+  if (this.className === '_User' && this.query && !this.auth.couldUpdateUserId(this.query.objectId)) {
+    throw new Parse.Error(Parse.Error.SESSION_MISSING, `Cannot modify user ${this.query.objectId}.`);
+  }
+
+  if (this.className === '_Product' && this.data.download){
+    this.data.downloadName = this.data.download.name;
+  }
+
+  if (this.data.ACL && this.data.ACL['*unresolved']) {
+    throw new Parse.Error(Parse.Error.INVALID_ACL, 'Invalid ACL.');
+  }
+
+  if(this.query) {
+    if (this.className === '_User' && this.data.ACL) {
+      this.data.ACL[this.query.objectId] = { read: true, write: true };
+    }
+
+    if (this.className === '_User' && this.data._hashed_password && this.config.passwordPolicy && this.config.passwordPolicy.maxPasswordAge) {
+      this.data._password_changed_at = Parse._encode(new Date());
+    }
+
+    delete this.data.createdAt;
+
+    let defer = Promise.resolve();
+    
+    if (this.className === '_User' && this.data._hashed_password && this.config.passwordPolicy && this.config.passwordPolicy.maxPasswordHistory) {
+      defer = this.config.database.find('_User', { objectId: this.objectId()}, {keys: ["_password_history", "_hashed_password"]}).then(results => {
+        if (results.length != 1) {
+          throw undefined;
+        }
+
+        const user = results[0];
+        let oldPasswords = [];
+        if (user._password_history) {
+          oldPasswords = _.take(user._password_history, this.config.passwordPolicy.maxPasswordHistory);
+        }
+
+        //n-1 passwords go into history including last password
+        while(oldPasswords.length > this.config.passwordPolicy.maxPasswordHistory - 2) {
+          oldPasswords.shift();
+        }
+        oldPasswords.push(user.password);
+        this.data._password_history = oldPasswords;
+      });
+    }
+
+    return defer.then(() => {
+      return this.config.database.update(this.className, this.query, this.data, this.runOptions)
+      .then(response => {
+        response.updatedAt = this.updatedAt;
+        this._updateResponseWithData(response, this.data);
+        this.response = { response };
+      });
+    });
+  } else {
+    if (this.className === '_User') {
+      var ACL  = this.data.ACL;
+      if (!ACL) {
+        ACL = {};
+        ACL['*'] = { read: true, write: false };
+      }
+
+      ACL[this.data.objectId] = { read: true, write: true };
+      this.data.ACL = ACL;
+
+      if (this.config.passwordPolicy && this.config.passwordPolicy.maxPasswordAge) {
+        this.data._password_changed_at = Parse._encode(new Date());
+      }
+    }
+
+    return this.config.database.create(this.className, this.data, this.runOptions)
+    .catch(error => {
+      if (this.className !== '_User' || error.code !== Parse.Error.DUPLICATE_VALUE) {
+        throw error;
+      }
+
+      return this.config.database.find(
+        this.className,
+        { username: this.data.username, objectId: {'$ne': this.objectId() }},
+        { limit: 1 }
+      ).then(results => {
+        if (results.length > 0) {
+          throw new Parse.Error(Parse.Error.USERNAME_TAKEN, 'Account already exists for this username.');
+        }
+
+        return this.config.database.find(
+          this.className,
+          { email: this.data.email, objectId: {'$ne': this.objectId()}},
+          { limit: 1 }
+        );
+      }).then(results => {
+        if (results.length > 0) {
+          throw new Parse.Error(Parse.Error.EMAIL_TAKEN, 'Account already exists for this email address.');
+        }
+        throw new Parse.Error(Parse.Error.DUPLICATE_VALUE, 'A duplicate value for a field with unique values was provided');
+      });
+    })
+    .then(response => {
+      response.objectId = this.data.objectId;
+      response.createdAt = this.data.createdAt;
+
+      if(this.responseShouldHaveUsername) {
+        response.username = this.data.username;
+      }
+      this._updateResponseWithData(response, this.data);
+      this.response = {
+        status: 201,
+        response,
+        location: this.location()
+      };
+    });
+  }
+};
+
+
+RestWrite.prototype.runAfterTrigger = function() {
+  if (!this.response || !this.response.response) {
+    return;
+  }
+
+  const hasAfterSaveHook = triggers.triggerExists(this.className, triggers.Types.afterSave, this.config.applicationId);
+  const hasLiveQuery = this.config.liveQueryController.hasLiveQuery(this.className);
+  if (!hasAfterSaveHook && !hasLiveQuery) {
+    return Promise.resolve();
+  }
+
+  var extraData = { className: this.className };
+  if (this.query && this.query.objectId) {
+    extraData.objectId = this.query.objectId;
+  }
+
+  let originalObject;
+  if (this.query && this.query.objectId) {
+    originalObject = triggers.inflate(extraData, this.originalData);
+  }
+
+  const updatedObject = triggers.inflate(extraData, this.originalData);
+  updatedObject.set(this.sanitizedData());
+  updatedObject._handleSaveResponse(this.response.response, this.response.status || 200);
+
+  this.config.liveQueryController.onAfterSave(updatedObject.className, updatedObject, originalObject);
+
+  return triggers.maybeRunQueryTrigger(triggers.Types.afterSave, this.auth, updatedObject, originalObject, this.config);
+}
+
+
+RestWrite.prototype.location = function() {
+  var middle = (this.className === '_User' ? '/users/' : '/classes/' + this.className + '/');
+
+  return this.config.mount + middle + this.data.objectId;
+}
+
+
+RestWrite.prototype.objectId = function(){
+  return this.data.objectId || this.query.objectId;
+}
+
+RestWrite.prototype.sanitizedData = function() {
+  const data = Object.keys(this.data).reduce((data, key) => {
+    // Regexp comes from Parse.Object.prototype.validate
+    if (!(/^[A-Za-z][0-9A-Za-z_]*$/).test(key)) {
+      delete data[key];
+    }
+    return data;
+  }, deepcopy(this.data));
+  return Parse._decode(undefined, data);
+}
+
+RestWrite.prototype.clearUserAuthData = function() {
+  if (this.response && this.response.response && this.className === '_User') {
+    const user = this.response.response;
+    if (user.authData) {
+      Object.keys(user.authData).forEach((provider) => {
+        if (user.authData[provider] === null) {
+          delete user.authData[provider];
+        }
+      });
+      if (Object.keys(user.authData).length === 0) {
+        delete user.authData;
+      }
+    }
+  }
+};
 
 export default RestWrite;
 module.exports = RestWrite;

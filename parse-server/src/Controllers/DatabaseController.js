@@ -103,6 +103,21 @@ DatabaseController.prototype.redirectClassNameForKey = function(className, key) 
 }
 
 
+DatabaseController.prototype.validateObject = function(className, object, query, { acl }) {
+  let schema;
+  const isMaster = acl === undefined;
+  var aclGroup = acl || [];
+  return this.loadSchema().then(s => {
+    schema = s;
+    if (isMaster) {
+      return Promise.resolve();
+    }
+    return this.canAddField(schema, className, object, aclGroup);
+  }).then(() => {
+    return schema.validateObject(className, object, query);
+  })
+}
+
 // Adds a relation.
 // Returns a promise that resolves successfully iff the add was successful.
 const relationSchema = { fields: { relatedId: { type: 'String'}, owningId: {type: 'String'}}};
