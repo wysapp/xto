@@ -313,9 +313,209 @@ function transformTopLevelAtom(atom) {
 
 
 
+// Converts from a mongo-format object to a REST-format object.
+// Does not strip out anything based on a lack of authentication.
+const mongoObjectToParseObject = (className, mongoObject, schema) => {
+  switch(typeof mongoObject) {
+  case 'string':
+  case 'number':
+  case 'boolean':
+    return mongoObject;
+  case 'undefined':
+  case 'symbol':
+  case 'function':
+    throw 'bad value in mongoObjectToParseObject';
+  case 'object': {
+    if (mongoObject === null) {
+      return null;
+    }
+    if (mongoObject instanceof Array) {
+      return mongoObject.map(nestedMongoObjectToNestedParseObject);
+    }
+
+    if (mongoObject instanceof Date) {
+      return Parse._encode(mongoObject);
+    }
+
+    if (mongoObject instanceof mongodb.Long) {
+      return mongoObject.toNumber();
+    }
+
+    if (mongoObject instanceof mongodb.Double) {
+      return mongoObject.value;
+    }
+
+    if (BytesCoder.isValidDatabaseObject(mongoObject)) {
+      return BytesCoder.databaseToJSON(mongoObject);
+    }
+
+    const restObject = {};
+    if (mongoObject._rperm || mongoObject._wperm) {
+      restObject._rperm = mongoObject._rperm || [];
+      restObject._wperm = mongoObject._wperm || [];
+      delete mongoObject._rperm;
+      delete mongoObject._wperm;
+    }
+
+    for (var key in mongoObject) {
+      switch(key) {
+      case '_id':
+        restObject['objectId'] = '' + mongoObject[key];
+        break;
+      case '_hashed_password':
+        restObject._hashed_password = mongoObject[key];
+        break;
+      case '_acl':
+        break;
+      case '_email_verify_token':
+      case '_perishable_token':
+      case '_perishable_token_expires_at':
+      case '_password_changed_at':
+      case '_tombstone':
+      case '_email_verify_token_expires_at':
+      case '_account_lockout_expires_at':
+      case '_failed_login_count':
+      case '_password_history':
+        // Those keys will be deleted if needed in the DB Controller
+        restObject[key] = mongoObject[key];
+        break;
+      case '_session_token':
+        restObject['sessionToken'] = mongoObject[key];
+        break;
+      case 'updatedAt':
+      case '_updated_at':
+        restObject['updatedAt'] = Parse._encode(new Date(mongoObject[key])).iso;
+        break;
+      case 'createdAt':
+      case '_created_at':
+        restObject['createdAt'] = Parse._encode(new Date(mongoObject[key])).iso;
+        break;
+      case 'expiresAt':
+      case '_expiresAt':
+        restObject['expiresAt'] = Parse._encode(new Date(mongoObject[key]));
+        break;
+      default:
+        // Check other auth data keys
+        var authDataMatch = key.match(/^_auth_data_([a-zA-Z0-9_]+)$/);
+        if (authDataMatch) {
+          var provider = authDataMatch[1];
+          restObject['authData'] = restObject['authData'] || {};
+          restObject['authData'][provider] = mongoObject[key];
+          break;
+        }
+
+        if (key.indexOf('_p_') == 0) {
+          var newKey = key.substring(3);
+          if (!schema.fields[newKey]) {
+            log.info('transform.js', 'Found a pointer column not in the schema, dropping it.', className, newKey);
+            break;
+          }
+          if (schema.fields[newKey].type !== 'Pointer') {
+            log.info('transform.js', 'Found a pointer in a non-pointer column, dropping it.', className, key);
+            break;
+          }
+          if (mongoObject[key] === null) {
+            break;
+          }
+          var objData = mongoObject[key].split('$');
+          if (objData[0] !== schema.fields[newKey].targetClass) {
+            throw 'pointer to incorrect className';
+          }
+          restObject[newKey] = {
+            __type: 'Pointer',
+            className: objData[0],
+            objectId: objData[1]
+          };
+          break;
+        } else if (key[0] == '_' && key != '__type') {
+          throw ('bad key in untransform: ' + key);
+        } else {
+          var value = mongoObject[key];
+          if (schema.fields[key] && schema.fields[key].type === 'File' && FileCoder.isValidDatabaseObject(value)) {
+            restObject[key] = FileCoder.databaseToJSON(value);
+            break;
+          }
+          if (schema.fields[key] && schema.fields[key].type === 'GeoPoint' && GeoPointCoder.isValidDatabaseObject(value)) {
+            restObject[key] = GeoPointCoder.databaseToJSON(value);
+            break;
+          }
+          if (schema.fields[key] && schema.fields[key].type === 'Bytes' && BytesCoder.isValidDatabaseObject(value)) {
+            restObject[key] = BytesCoder.databaseToJSON(value);
+            break;
+          }
+        }
+        restObject[key] = nestedMongoObjectToNestedParseObject(mongoObject[key]);
+      }
+    }
+
+    const relationFieldNames = Object.keys(schema.fields).filter(fieldName => schema.fields[fieldName].type === 'Relation');
+    const relationFields = {};
+    relationFieldNames.forEach(relationFieldName => {
+      relationFields[relationFieldName] = {
+        __type: 'Relation',
+        className: schema.fields[relationFieldName].targetClass,
+      }
+    });
+
+    return { ...restObject, ...relationFields };
+  }
+  default:
+    throw 'unknown js type';
+  }
+}
+
+var DateCoder = {
+  JSONToDatabase(json) {
+    return new Date(json.iso);
+  },
+
+  isValidJSON(value) {
+    return (typeof value === 'object' && value !== null && value.__type === 'Date');
+  }
+}
+
+
+var BytesCoder = {
+  base64Pattern: new RegExp("^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$"),
+
+  JSONToDatabase(json) {
+    return new mongodb.Binary(new Buffer(json.base64, 'base64'));
+  },
+
+  isValidJSON(value) {
+    return (typeof value === 'object' && value !== null && value.__type === 'Bytes');
+  }
+
+}
+
+
+var GeoPointCoder = {
+
+  JSONToDatabase(json) {
+    return [json.longitude, json.latitude ];
+  },
+
+  isValidJSON(value) {
+    return ( typeof value === 'object' && value !== null && value.__type === 'GeoPoint');
+  }
+}
+
+
+var FileCoder = {
+  JSONToDatabase(json) {
+    return json.name;
+  },
+
+  isValidJSON(value) {
+    return (typeof value === 'object' && value !== null && value.__type === 'File');
+  }
+}
+
 module.exports = {
   transformKey,
   parseObjectToMongoObjectForCreate,
   transformWhere,
+
+  mongoObjectToParseObject
 }
 

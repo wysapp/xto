@@ -693,6 +693,7 @@ RestWrite.prototype.runDatabaseOperation = function() {
         response.username = this.data.username;
       }
       this._updateResponseWithData(response, this.data);
+      
       this.response = {
         status: 201,
         response,
@@ -771,6 +772,31 @@ RestWrite.prototype.clearUserAuthData = function() {
     }
   }
 };
+
+
+RestWrite.prototype._updateResponseWithData = function(response, data) {
+  if (_.isEmpty(this.storage.fieldsChangedByTrigger)) {
+    return response;
+  }
+
+  const clientSupportsDelete = ClientSDK.supportsForwardDelete(this.clientSDK);
+  this.storage.fieldsChangedByTrigger.forEach(fieldName => {
+    const dataValue = data[fieldName];
+    const responseValue = response[fieldName];
+
+    response[fieldName] = responseValue || dataValue;
+
+    if (response[fieldName] && response[fieldName].__op) {
+      delete response[fieldName];
+      if (clientSupportsDelete && dataValue.__op == 'Delete') {
+        response[fieldName] = dataValue;
+      }
+    }
+  });
+
+  return response;
+}
+
 
 export default RestWrite;
 module.exports = RestWrite;

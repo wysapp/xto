@@ -50,6 +50,10 @@ const isSpecialQueryKey = key => {
   return specialQuerykeys.indexOf(key) >= 0;
 }
 
+
+
+
+
 const validateQuery = query => {
   if (query.ACL) {
     throw new Parse.Error(Parse.Error.INVALID_QUERY, 'Cannot query on ACL.');
@@ -144,6 +148,24 @@ DatabaseController.prototype.validateObject = function(className, object, query,
   }).then(() => {
     return schema.validateObject(className, object, query);
   })
+}
+
+
+function sanitizeDatabaseResult(originalObject, result) {
+  
+  const response = {};
+  if (!result){
+    return Promise.resolve(response);
+  }
+
+  Object.keys(originalObject).forEach(key => {
+    const keyUpdate = originalObject[key];
+
+    if (keyUpdate && typeof keyUpdate === 'object' && keyUpdate.__op && ['Add', 'AddUnique', 'Remove', 'Increment'].indexOf(keyUpdate.__op) > -1) {
+      response[key] = result[key];
+    }
+  });
+  return Promise.resolve(response);
 }
 
 

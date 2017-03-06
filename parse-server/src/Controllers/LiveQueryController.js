@@ -15,6 +15,11 @@ export class LiveQueryController {
 
 
   }
+
+
+  hasLiveQuery(className: string): boolean {
+    return this.classNames.has(className);
+  }
 }
 
 

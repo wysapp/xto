@@ -9,6 +9,7 @@ import {
 
 import {
   parseObjectToMongoObjectForCreate,
+  mongoObjectToParseObject,
   transformKey,
   transformWhere
 } from './MongoTransform';
