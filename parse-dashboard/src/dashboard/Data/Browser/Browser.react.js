@@ -354,6 +354,8 @@ export default class Browser extends DashboardView {
       obj.set(attr, value);
     }
 
+    console.log('2222222222222222222222222', obj);
+
     obj.save(null, { useMasterKey: true}).then(() => {
       const state = { data: this.state.data, lastError: null };
       if (isNewObject) {

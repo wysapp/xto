@@ -151,6 +151,113 @@ DatabaseController.prototype.validateObject = function(className, object, query,
 }
 
 
+const filterSensitiveData = (isMaster, aclGroup, className, object) => {
+  if (className !== '_User') {
+    return object;
+  }
+
+  object.password = object._hashed_password;
+  delete object._hashed_password;
+  delete object.sessionToken;
+
+  if (isMaster) {
+    return object;
+  }
+
+  delete object._email_verify_token;
+  delete object._perishable_token;
+  delete object._perishable_token_expires_at;
+  delete object._tombstone;
+  delete object._email_verify_token_expires_at;
+  delete object._failed_login_count;
+  delete object._account_lockout_expires_at;
+  delete object._password_changed_at;
+
+  if ((aclGroup.indexOf(object.objectId) > -1)) {
+    return object;
+  }
+
+  delete object.authData;
+  return object;
+}
+
+
+DatabaseController.prototype.update = function(className, query, update, {
+  acl,
+  many,
+  upsert,
+} = {}, skipSanitization = false ) {
+  const originalUpdate = update;
+  update = deepcopy(update);
+
+  var isMaster = acl === undefined;
+  var aclGroup = acl || [];
+  return this.loadSchema()
+  .then(schemaController => {
+    return (isMaster ? Promise.resolve() : schemaController.validatePermission(className, aclGroup, 'update'))
+    .then(() => this.handleRelationUpdates(className, query.objectId, update))
+    .then(() => {
+      if (!isMaster) {
+        query = this.addPointerPermissions(schemaController, className, 'update', query, aclGroup);
+      }
+      if (!query) {
+        return Promise.resolve();
+      }
+      if (acl) {
+        query = addWriteACL(query, acl);
+      }
+
+      validateQuery(query);
+
+      return schemaController.getOneSchema(className, true)
+      .catch(error =>{
+        if (error === undefined) {
+          return { fields: {} };
+        }
+        throw error;
+      })
+      .then(schema => {
+        Object.keys(update).forEach(fieldName => {
+          if (fieldName.match(/^authData\.(a-zA-Z0-9_]+)\.id$/)) {
+            throw new Parse.Error(Parse.Error.INVALID_KEY_NAME, `Invalid field name for update: ${fieldName}`);
+          }
+          fieldName = fieldName.split('.')[0];
+          if (!SchemaController.fieldNameIsValid(fieldName) && !isSpecialUpdateKey(fieldName)) {
+            throw new Parse.Error(Parse.Error.INVALID_KEY_NAME, `Invalid field name for update: ${fieldName}`);
+          }
+        });
+
+        for (const updateOperation in update) {
+          if (Object.keys(updateOperation).some(innerKey => innerKey.includes('$') || innerKey.includes('.'))) {
+            throw new Parse.Error(Parse.Error.INVALID_NESTED_KEY, "Nested keys should not contain the '$' or '.' characters");
+          }
+        }
+
+        update = transformObjectACL(update);
+        transformAuthData(className, update, schema);
+
+        if (many) {
+          return this.adapter.updateObjectByQuery(className, schema, query, update);
+        } else if (upsert) {
+          return this.adapter.upsertOneObject(className, schema, query, update);
+        } else {
+          return this.adapter.findOneAndUpdate(className, schema, query, update);
+        }
+      });
+    })
+    .then(result => {
+      if (!result) {
+        return Promise.reject(new Parse.Error(Parse.Error.OBJECT_NOT_FOUND, 'Object not found.'));
+      }
+      if (skipSanitization) {
+        return Promise.resolve(result);
+      }
+      return sanitizeDatabaseResult(originalUpdate, result);
+    });
+  });
+}
+
+
 function sanitizeDatabaseResult(originalObject, result) {
   
   const response = {};
@@ -529,6 +636,7 @@ DatabaseController.prototype.find = function(className, query, {
           } else {
             return this.adapter.find(className, schema, query, {skip, limit, sort, keys})
             .then(objects => objects.map(object => {
+              
               object = untransformObjectACL(object);
               return filterSensitiveData(isMaster, aclGroup, className, object);
             }));
@@ -537,6 +645,30 @@ DatabaseController.prototype.find = function(className, query, {
       });
     });
   });
+}
+
+
+const untransformObjectACL = ({_rperm, _wperm, ...output}) => {
+  if (_rperm || _wperm) {
+    output.ACL = {};
+    (_rperm || []).forEach(entry => {
+      if (!output.ACL[entry]) {
+        output.ACL[entry] = { read: true };
+      } else {
+        output.ACL[entry]['read'] = true;
+      }
+    });
+
+    (_wperm || []).forEach(entry => {
+      if (!output.ACL[entry]) {
+        output.ACL[entry] = { write: true };
+      } else {
+        output.ACL[entry]['write'] = true;
+      }
+    });
+  }
+
+  return output;
 }
 
 

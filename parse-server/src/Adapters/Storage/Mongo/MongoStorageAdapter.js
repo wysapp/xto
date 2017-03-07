@@ -11,7 +11,8 @@ import {
   parseObjectToMongoObjectForCreate,
   mongoObjectToParseObject,
   transformKey,
-  transformWhere
+  transformWhere,
+  transformUpdate,
 } from './MongoTransform';
 
 import Parse from 'parse/node';
@@ -257,6 +258,19 @@ export class MongoStorageAdapter {
       throw error;
     });
   }
+
+
+  // Atomically finds and updates an object based on query.
+  // Return value not currently well specified.
+  findOneAndUpdate(className, schema, query, update) {
+    schema = convertParseSchemaToMongoSchema(schema);
+    const mongoUpdate = transformUpdate(className, update, schema);
+    const mongoWhere = transformWhere(className, query, schema);
+    return this._adaptiveCollection(className)
+    .then(collection => collection._mongoCollection.findAndModify(mongoWhere, [], mongoUpdate, { new: true }))
+    .then(result => mongoObjectToParseObject(className, result.value, schema));
+  }
+
 
   find(className, schema, query, {skip, limit,sort, keys}) {
 

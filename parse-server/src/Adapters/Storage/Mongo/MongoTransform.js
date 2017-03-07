@@ -23,6 +23,98 @@ const transformKey = (className, fieldName, schema) => {
 }
 
 
+const transformKeyValueForUpdate = (className, restKey, restValue, parseFormatSchema) => {
+  // Check if the schema is known since it's a built-in field.
+  var key = restKey;
+  var timeField = false;
+  switch(key) {
+  case 'objectId':
+  case '_id':
+    if (className === '_GlobalConfig') {
+      return {
+        key: key,
+        value: parseInt(restValue)
+      }
+    }
+    key = '_id';
+    break;
+  case 'createdAt':
+  case '_created_at':
+    key = '_created_at';
+    timeField = true;
+    break;
+  case 'updatedAt':
+  case '_updated_at':
+    key = '_updated_at';
+    timeField = true;
+    break;
+  case 'sessionToken':
+  case '_session_token':
+    key = '_session_token';
+    break;
+  case 'expiresAt':
+  case '_expiresAt':
+    key = 'expiresAt';
+    timeField = true;
+    break;
+  case '_email_verify_token_expires_at':
+    key = '_email_verify_token_expires_at';
+    timeField = true;
+    break;
+  case '_account_lockout_expires_at':
+    key = '_account_lockout_expires_at';
+    timeField = true;
+    break;
+  case '_failed_login_count':
+    key = '_failed_login_count';
+    break;
+  case '_perishable_token_expires_at':
+    key = '_perishable_token_expires_at';
+    timeField = true;
+    break;
+  case '_password_changed_at':
+    key = '_password_changed_at';
+    timeField = true;
+    break;
+  case '_rperm':
+  case '_wperm':
+    return {key: key, value: restValue};
+  }
+
+  if ((parseFormatSchema.fields[key] && parseFormatSchema.fields[key].type === 'Pointer') || (!parseFormatSchema.fields[key] && restValue && restValue.__type == 'Pointer')) {
+    key = '_p_' + key;
+  }
+
+  // Handle atomic values
+  var value = transformTopLevelAtom(restValue);
+  if (value !== CannotTransform) {
+    if (timeField && (typeof value === 'string')) {
+      value = new Date(value);
+    }
+    if (restKey.indexOf('.') > 0) {
+      return {key, value: restValue}
+    }
+    return {key, value};
+  }
+
+  // Handle arrays
+  if (restValue instanceof Array) {
+    value = restValue.map(transformInteriorValue);
+    return {key, value};
+  }
+
+    // Handle update operators
+  if (typeof restValue === 'object' && '__op' in restValue) {
+    return {key, value: transformUpdateOperator(restValue, false)};
+  }
+
+  // Handle normal objects by recursing
+  value = _.mapValues(restValue, transformInteriorValue);
+  return {key, value};
+}
+
+
+
 function transformQueryKeyValue(className, key, value, schema) {
   switch(key) {
     case 'createdAt':
@@ -230,6 +322,46 @@ const parseObjectToMongoObjectForCreate = (className, restCreate, schema) =>{
 }
 
 
+// Main exposed method to help update old objects.
+const transformUpdate = (className, restUpdate, parseFormatSchema) => {
+  const mongoUpdate = {};
+  const acl = addLegacyACL(restUpdate);
+  if (acl._rperm || acl._wperm || acl._acl) {
+    mongoUpdate.$set = {};
+    if (acl._rperm) {
+      mongoUpdate.$set._rperm = acl._rperm;
+    }
+
+    if (acl._wperm) {
+      mongoUpdate.$set._wperm = acl._wperm;
+    }
+
+    if (acl._acl) {
+      mongoUpdate.$set._acl = acl._acl;
+    }
+  }
+
+  for (var restKey in restUpdate) {
+    if (restUpdate[restKey] && restUpdate[restKey].__type === 'Relation') {
+      continue;
+    }
+
+    var out = transformKeyValueForUpdate(className, restKey, restUpdate[restKey], parseFormatSchema);
+
+    if(typeof out.value === 'object' && out.value !== null && out.value.__op) {
+      mongoUpdate[out.value.__op] = mongoUpdate[out.value.__op] || {};
+      mongoUpdate[out.value.__op][out.key] = out.value.arg;
+    } else {
+      mongoUpdate['$set'] = mongoUpdate['$set'] || {};
+      mongoUpdate['$set'][out.key] = out.value;
+    }
+  }
+
+  return mongoUpdate;
+}
+
+
+
 const addLegacyACL = restObject => {
   const restObjectCopy = {...restObject};
   const _acl = {};
@@ -311,6 +443,52 @@ function transformTopLevelAtom(atom) {
   }
 }
 
+
+
+const nestedMongoObjectToNestedParseObject = mongoObject => {
+  switch(typeof mongoObject) {
+  case 'string':
+  case 'number':
+  case 'boolean':
+    return mongoObject;
+  case 'undefined':
+  case 'symbol':
+  case 'function':
+    throw 'bad value in mongoObjectToParseObject';
+  case 'object':
+    if(mongoObject === null) {
+      return null;
+    }
+    if (mongoObject instanceof Array) {
+      return mongoObject.map(nestedMongoObjectToNestedParseObject);
+    }
+
+    if (mongoObject instanceof Date) {
+      return Parse._encode(mongoObject);
+    }
+
+    if (mongoObject instanceof mongodb.Long) {
+      return mongoObject.toNumber();
+    }
+
+    if (mongoObject instanceof mongodb.Double) {
+      return mongoObject.value;
+    }
+
+    if (BytesCoder.isValidDatabaseObject(mongoObject)) {
+      return BytesCoder.databaseToJSON(mongoObject);
+    }
+
+    if (mongoObject.hasOwnProperty('__type') && mongoObject.__type == 'Date' && mongoObject.iso instanceof Date) {
+      mongoObject.iso = mongoObject.iso.toJSON();
+      return mongoObject;
+    }
+
+    return _.mapValues(mongoObject, nestedMongoObjectToNestedParseObject);
+  default:
+    throw 'unknown js type';
+  }
+}
 
 
 // Converts from a mongo-format object to a REST-format object.
@@ -478,6 +656,32 @@ var DateCoder = {
 var BytesCoder = {
   base64Pattern: new RegExp("^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$"),
 
+  isBase64Value(object) {
+    if (typeof object !== 'string') {
+      return false;
+    }
+    return this.base64Pattern.test(object);
+  },
+
+  databaseToJSON(object) {
+    let value;
+    if (this.isBase64Value(object)) {
+      value = object;
+    } else {
+      value = object.buffer.toString('base64');
+    }
+
+    return {
+      __type: 'Bytes',
+      base64: value
+    };
+  },
+
+  isValidDatabaseObject(object) {
+    return (object instanceof mongodb.Binary) || this.isBase64Value(object);
+  },
+
+
   JSONToDatabase(json) {
     return new mongodb.Binary(new Buffer(json.base64, 'base64'));
   },
@@ -491,6 +695,18 @@ var BytesCoder = {
 
 var GeoPointCoder = {
 
+  databaseToJSON(object) {
+    return {
+      __type: 'GeoPoint',
+      latitude: object[1],
+      longitude: object[0]
+    }
+  },
+
+  isValidDatabaseObject(object) {
+    return (object instanceof Array && object.length == 2);
+  },
+
   JSONToDatabase(json) {
     return [json.longitude, json.latitude ];
   },
@@ -502,6 +718,18 @@ var GeoPointCoder = {
 
 
 var FileCoder = {
+  databaseToJSON(object) {
+    return {
+      __type: 'File',
+      name: object
+    };
+  },
+
+  isValidDatabaseObject(object) {
+    return (typeof object === 'string');
+  },
+
+
   JSONToDatabase(json) {
     return json.name;
   },
@@ -515,7 +743,7 @@ module.exports = {
   transformKey,
   parseObjectToMongoObjectForCreate,
   transformWhere,
-
+  transformUpdate,
   mongoObjectToParseObject
 }
 

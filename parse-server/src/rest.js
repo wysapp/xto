@@ -34,6 +34,28 @@ function create(config, auth, className, restObject, clientSDK) {
 }
 
 
+
+function update(config, auth, className, objectId, restObject, clientSDK) {
+  enforceRoleSecurity('update', className, auth);
+
+  return Promise.resolve().then(() => {
+    if (triggers.getTrigger(className, triggers.Types.beforeSave, config.applicationId) ||
+        triggers.getTrigger(className, triggers.Types.afterSave, config.applicationId) ||
+        (config.liveQueryController && config.liveQueryController.hasLiveQuery(className))) {
+      return find(config, Auth.master(config), className, {objectId: objectId});
+    }
+    return Promise.resolve({});
+  }).then((response) => {
+    var originalRestObject ;
+    if (response && response.results && response.results.length) {
+      originalRestObject = response.results[0];
+    }
+
+    var write = new RestWrite(config, auth, className, {objectId: objectId}, restObject, originalRestObject, clientSDK);
+    return write.execute();
+  });
+}
+
 // Disallowing access to the _Role collection except by master key
 function enforceRoleSecurity(method, className, auth) {
   if (className === '_Installation' && !auth.isMaster) {
@@ -48,4 +70,5 @@ function enforceRoleSecurity(method, className, auth) {
 module.exports = {
   create,
   find,
+  update,
 };
