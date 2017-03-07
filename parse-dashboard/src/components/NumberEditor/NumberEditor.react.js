@@ -6,14 +6,15 @@
  * the root directory of this source tree.
  */
 import React from 'react';
-import styles from 'components/StringEditor/StringEditor.scss';
+import validateNumeric from 'lib/validateNumeric';
+import styles from 'components/NumberEditor/NumberEditor.scss';
 
-export default class StringEditor extends React.Component {
-  constructor(props) {
+export default class NumberEditor extends React.Component {
+  constructor(props){
     super();
 
     this.state = {
-      value: props.value || ''
+      value: props.value || 0
     };
 
     this.checkExternalClick = this.checkExternalClick.bind(this);
@@ -21,11 +22,14 @@ export default class StringEditor extends React.Component {
   }
 
   componentDidMount() {
+    
     this.refs.input.focus();
-    this.refs.input.setSelectionRange(0, this.state.value.length);
+    this.refs.input.setSelectionRange(0, String(this.state.value).length);
+    
     document.body.addEventListener('click', this.checkExternalClick);
     document.body.addEventListener('keypress', this.handleKey);
   }
+
 
   componentWillUnmount() {
     document.body.removeEventListener('click', this.checkExternalClick);
@@ -34,37 +38,38 @@ export default class StringEditor extends React.Component {
 
   checkExternalClick(e) {
     if (e.target !== this.refs.input) {
-      this.props.onCommit(this.state.value);
+      this.commitValue();
     }
   }
+
 
   handleKey(e) {
     if (e.keyCode === 13) {
-      // if it's a multiline input, we allow Shift+Enter to create a newline
-      // Otherwise, we submit
-      if (!this.props.multiline || !e.shiftKey) {
-        this.props.onCommit(this.state.value);
-      }
+      this.commitValue();
     }
   }
 
-  render() {
-    let onChange = this.props.readonly ? () => {} : (e) => this.setState({value: e.target.value});
-    if (this.props.multiline) {
-      return (
-        <div className={styles.editor}>
-          <textarea 
-            ref="input"
-            value={this.state.value}
-            onChange={onChange}
-            style={{ minWidth: this.props.minWidth }}
-          />
-        </div>
-      );
+  commitValue() {
+    let value = this.state.value;
+    if (typeof value === 'string') {
+      if (value === '') {
+        value = undefined;
+      } else {
+        value = parseFloat(value);
+      }
     }
+    this.props.onCommit(value);
+  }
+
+
+  render() {
+    let onChange = (e) => {
+      let value = e.target.value;
+      this.setState({ value: validateNumeric(value) ? value : this.state.value });
+    };
 
     return (
-      <div style={{ width: this.props.width }} className={styles.editor} >
+      <div style={{ width: this.props.width }} className={styles.editor}>
         <input 
           ref="input"
           value={this.state.value}

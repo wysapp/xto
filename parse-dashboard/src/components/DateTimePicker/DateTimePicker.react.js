@@ -5,20 +5,18 @@
  * This source code is licensed under the license found in the LICENSE file in
  * the root directory of this source tree.
  */
-import React from 'react';
-import ReactDOM from 'react-dom';
-import Button from 'components/Button/Button.react';
-import Calendar from 'components/Calendar/Calendar.react';
-import PropTypes from 'lib/PropTypes';
-import { Directions } from 'lib/Constants';
-import { MONTHS, hoursFrom, getDateMethod} from 'lib/DateUtils';
-import styles from 'components/DateTimePicker/DateTimePicker.scss';
-
+import Button                               from 'components/Button/Button.react';
+import Calendar                             from 'components/Calendar/Calendar.react';
+import { Directions }                       from 'lib/Constants';
+import { MONTHS, hoursFrom, getDateMethod } from 'lib/DateUtils';
+import PropTypes                            from 'lib/PropTypes';
+import React                                from 'react';
+import ReactDOM                             from 'react-dom';
+import styles                               from 'components/DateTimePicker/DateTimePicker.scss';
 
 export default class DateTimePicker extends React.Component {
   constructor(props) {
     super();
-
     let timeRef = props.value || hoursFrom(new Date(), 1);
     this.state = {
       hours: String(timeRef[getDateMethod(props.local, 'getHours')]()),
@@ -37,23 +35,20 @@ export default class DateTimePicker extends React.Component {
   changeHours(e) {
     let hoursString = e.target.value;
     if (hoursString === '') {
-      return this.setState({hours: ''});
+      return this.setState({ hours: '' });
     }
-
     if (isNaN(hoursString)) {
-      return ;
+      return;
     }
     let hours = parseInt(hoursString, 10);
     if (hours < 0) {
       hours = 0;
     }
-
     if (hours > 23) {
       hours = 23;
     }
-    this.setState({hours: String(hours)});
+    this.setState({ hours: String(hours) });
   }
-
 
   changeMinutes(e) {
     let minutesString = e.target.value;
@@ -95,33 +90,27 @@ export default class DateTimePicker extends React.Component {
     }
   }
 
-
   render() {
-
     return (
-      <div style={{width: this.props.width}} className={styles.picker}>
-        <Calendar 
-          local={this.props.local}
-          value={this.props.value}
-          onChange={(newValue) => {
-            let timeRef = this.props.value || hoursFrom(new Date(), 1);
-            let newDate = this.props.local ? new Date(
-              newValue.getFullYear(),
-              newValue.getMonth(),
-              newValue.getDate(),
-              newValue.getHours(),
-              newValue.getMinutes()
-            ) : 
-            new Date(Date.UTC(
-              newValue.getUTCFullYear(),
-              newValue.getUTCMonth(),
-              newValue.getUTCDate(),
-              timeRef.getUTCHours(),
-              timeRef.getUTCMinutes()
-            ));
-            this.props.onChange(newDate);
-          }}
-        />
+      <div style={{ width: this.props.width }} className={styles.picker}>
+        <Calendar local={this.props.local} value={this.props.value} onChange={(newValue) => {
+          let timeRef = this.props.value || hoursFrom(new Date(), 1);
+          let newDate = this.props.local ? new Date(
+            newValue.getFullYear(),
+            newValue.getMonth(),
+            newValue.getDate(),
+            timeRef.getHours(),
+            timeRef.getMinutes()
+          ) :
+          new Date(Date.UTC(
+            newValue.getUTCFullYear(),
+            newValue.getUTCMonth(),
+            newValue.getUTCDate(),
+            timeRef.getUTCHours(),
+            timeRef.getUTCMinutes()
+          ));
+          this.props.onChange(newDate);
+        }} />
         <div className={styles.time}>
           <div style={{float: 'left'}}>
             <input type='text' value={this.state.hours} onChange={this.changeHours.bind(this)} />
@@ -134,7 +123,6 @@ export default class DateTimePicker extends React.Component {
     );
   }
 }
-
 
 DateTimePicker.propTypes = {
   value: PropTypes.instanceOf(Date).describe(
