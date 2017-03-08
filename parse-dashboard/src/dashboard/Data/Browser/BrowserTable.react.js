@@ -43,10 +43,10 @@ export default class BrowserTable extends React.Component {
       });
       this.refs.table.scrollTop = 0;
     } else if (this.props.newObject !== props.newObject) {
-      this.setState({offset: 0});
+      this.setState({ offset: 0 });
       this.refs.table.scrollTop = 0;
     } else if (this.props.ordering !== props.ordering) {
-      this.setState({offset: 0});
+      this.setState({ offset: 0 });
       this.refs.table.scrollTop = 0;
     }
   }
@@ -58,11 +58,10 @@ export default class BrowserTable extends React.Component {
     return (
       <div key={`row${index}`} className={styles.tableRow} style={{minWidth: rowWidth}}>
         <span className={styles.checkCell}>
-          <input 
-            type="checkbox"
+          <input
+            type='checkbox'
             checked={this.props.selection['*'] || this.props.selection[obj.id]}
-            onChange={(e) => this.props.selectRow(obj.id, e.target.checked)}
-          />
+            onChange={(e) => this.props.selectRow(obj.id, e.target.checked)} />
         </span>
         {this.props.order.map(({name, width}, j) => {
           let type = this.props.columns[name].type;

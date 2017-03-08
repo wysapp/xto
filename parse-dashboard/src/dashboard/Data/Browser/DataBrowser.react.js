@@ -48,7 +48,6 @@ export default class DataBrowser extends React.Component {
         context.currentApp.applicationId,
         props.className
       );
-
       this.setState({
         order: order,
         current: null,
@@ -60,7 +59,7 @@ export default class DataBrowser extends React.Component {
         context.currentApp.applicationId,
         props.className
       );
-      this.setState({order});
+      this.setState({ order });
     }
   }
 

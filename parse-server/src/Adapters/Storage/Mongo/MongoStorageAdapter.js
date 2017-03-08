@@ -272,6 +272,15 @@ export class MongoStorageAdapter {
   }
 
 
+  upsertOneObject(className, schema, query, update) {
+    schema = convertParseSchemaToMongoSchema(schema);
+    const mongoUpdate = transformUpdate(className, update, schema);
+    const mongoWhere = transformWhere(className, query, schema);
+    return this._adaptiveCollection(className)
+    .then(collection => collection.upsertOne(mongoWhere, mongoUpdate));
+  }
+
+
   find(className, schema, query, {skip, limit,sort, keys}) {
 
     schema = convertParseSchemaToMongoSchema(schema);

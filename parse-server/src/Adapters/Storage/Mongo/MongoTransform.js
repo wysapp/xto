@@ -502,7 +502,7 @@ function transformConstraint(constraint, inArray) {
     return result;
   }
 
-  var keys = Object.keys(constraint).srot().reverse();
+  var keys = Object.keys(constraint).sort().reverse();
   var answer = {};
   for(var key of keys) {
     switch(key) {

@@ -74,6 +74,7 @@ export default class Browser extends DashboardView {
     this.showRemoveColumn = this.showRemoveColumn.bind(this);
     this.showDropClass = this.showDropClass.bind(this);
 
+    this.selectRow = this.selectRow.bind(this);
     this.updateRow = this.updateRow.bind(this);
     this.updateOrdering = this.updateOrdering.bind(this);
     this.setRelation = this.setRelation.bind(this);
@@ -295,6 +296,13 @@ export default class Browser extends DashboardView {
   }
 
 
+  async fetchParseDataCount(source, filters) {
+    const query = queryFromFilters(source, filters);
+    const count = await query.count({ useMasterKey: true });
+    return count;
+  }
+
+
   async fetchData(source, filters = new List(), last) {
     const data = await this.fetchParseData(source, filters) ;
     var filteredCounts = {...this.state.filteredCounts};
@@ -456,6 +464,23 @@ export default class Browser extends DashboardView {
   }
 
 
+  selectRow(id, checked) {
+    
+    this.setState(({selection}) => {
+      if (id ==='*') {
+        return { selection: checked ? { '*' : true } : {}};
+      }
+
+      if (checked) {
+        selection[id] = true;
+      } else {
+        delete selection[id];
+      }
+      return { selection};
+    });
+  }
+
+
   getClassColumns(className, onlyTouchable =true) {
     let columns = [];
     const classes = this.props.schema.data.get('classes');
@@ -593,6 +618,7 @@ export default class Browser extends DashboardView {
 
             columns={columns}
             className={className}
+            selectRow={this.selectRow}
             selection={this.state.selection}
             data={this.state.data}
             ordering={this.state.ordering}

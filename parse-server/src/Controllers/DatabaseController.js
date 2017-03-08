@@ -321,6 +321,15 @@ DatabaseController.prototype.handleRelationUpdates = function(className, objectI
 const relationSchema = { fields: { relatedId: { type: 'String'}, owningId: {type: 'String'}}};
 
 
+DatabaseController.prototype.addRelation = function(key, fromClassName, fromId, toId) {
+  const doc = {
+    relatedId: toId,
+    owningId: fromId
+  };
+
+  return this.adapter.upsertOneObject(`_Join:${key}:${fromClassName}`, relationSchema, doc, doc);
+}
+
 const flattenUpdateOperatorsForCreate = object => {
   for (const key in object) {
     if (object[key] && object[key].__op) {
