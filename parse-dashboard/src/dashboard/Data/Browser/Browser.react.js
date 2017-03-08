@@ -76,6 +76,7 @@ export default class Browser extends DashboardView {
 
     this.updateRow = this.updateRow.bind(this);
     this.updateOrdering = this.updateOrdering.bind(this);
+    this.setRelation = this.setRelation.bind(this);
     this.showAddColumn = this.showAddColumn.bind(this);
     this.addRow = this.addRow.bind(this);
     this.showCreateClass = this.showCreateClass.bind(this);
@@ -307,6 +308,26 @@ export default class Browser extends DashboardView {
 
   }
 
+
+
+  async fetchRelation(relation, filters = new List()) {
+    const data = await this.fetchParseData(relation, filters);
+    const relationCount = await this.fetchRelationCount(relation);
+
+    await this.setState({
+      relation,
+      relationCount,
+      selection: {},
+      data,
+      filters,
+      lastMax: 200,
+    });
+  }
+
+  async fetchRelationCount(relation) {
+    return await this.context.currentApp.getRelationCount(relation);
+  }
+
   updateFilters(filters) {
     const relation = this.state.relation;
     if (relation) {
@@ -336,8 +357,32 @@ export default class Browser extends DashboardView {
   }
 
 
+  getRelationURL() {
+    
+    const relation = this.state.relation;
+    const className = this.props.params.className;
+    const entityId = relation.parent.id;
+    const relationName = relation.key;
+    return this.context.generatePath(`browser/${className}/${entityId}/${relationName}`);
+  }
+
+
+  setRelation(relation, filters) {
+    
+    this.setState({
+      relation: relation,
+    }, () => {
+      let filterQueryString;
+      if (filters && filters.size) {
+        filterQueryString = encodeURIComponent(JSON.stringify(filters.toJSON()));
+      }
+      const url = `${this.getRelationURL()}${filterQueryString ? `?filters=${filterQueryString}` : ''}`;
+      history.push(url);
+    });
+  }
+
+
   updateRow(row, attr, value) {
-    console.log('2222222222222222222222222', row, attr, value);
     
     const isNewObject = row < 0;
     const obj = isNewObject ? this.state.newObject : this.state.data[row];
@@ -557,6 +602,7 @@ export default class Browser extends DashboardView {
             relation={this.state.relation}
             updateRow={this.updateRow}
             updateOrdering={this.updateOrdering}
+            setRelation={this.setRelation}
             onAddColumn={this.showAddColumn}
             onAddRow={this.addRow}
             onAddClass={this.showCreateClass}

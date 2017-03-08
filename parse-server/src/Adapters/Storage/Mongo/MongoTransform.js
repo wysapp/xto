@@ -114,6 +114,28 @@ const transformKeyValueForUpdate = (className, restKey, restValue, parseFormatSc
 }
 
 
+const transformInteriorValue = restValue => {
+  if (restValue !== null && typeof restValue === 'object' && Object.keys(restValue).some(key => key.includes('$') || key.includes('.'))) {
+    throw new Parse.Error(Parse.Error.INVALID_NESTED_KEY, "Nested keys should not contain the '$' or '.' characters");
+  }
+
+  var value = transformInteriorAtom(restValue);
+  if (value !== CannotTransform) {
+    return value;
+  }
+
+  if (restValue instanceof Array) {
+    return restValue.map(transformInteriorValue);
+  }
+
+  if (typeof restValue === 'object' && '__op' in restValue) {
+    return transformUpdateOperator(restValue, true);
+  }
+
+  return _.mapValues(restValue, transformInteriorValue);
+}
+
+
 
 function transformQueryKeyValue(className, key, value, schema) {
   switch(key) {
@@ -396,6 +418,24 @@ const addLegacyACL = restObject => {
 function CannotTransform() {}
 
 
+const transformInteriorAtom = atom => {
+  if (typeof atom === 'object' && atom && !(atom instanceof Date) && atom.__type === 'Pointer') {
+    return {
+      __type: 'Pointer',
+      className: atom.className,
+      objectId: atom.objectId
+    };
+  } else if (typeof atom === 'function' || typeof atom === 'symbol') {
+    throw new Parse.Error(Parse.Error.INVALID_JSON, `cannot transform value: ${atom}`);
+  } else if (DateCoder.isValidJSON(atom)) {
+    return DateCoder.JSONToDatabase(atom);
+  } else if (BytesCoder.isValidJSON(atom)) {
+    return BytesCoder.JSONToDatabase(atom);
+  } else {
+    return atom;
+  }
+}
+
 // Helper function to transform an atom from REST format to Mongo format.
 // An atom is anything that can't contain other expressions. So it
 // includes things where objects are used to represent other
@@ -443,7 +483,130 @@ function transformTopLevelAtom(atom) {
   }
 }
 
+// Transforms a query constraint from REST API format to Mongo format.
+// A constraint is something with fields like $lt.
+// If it is not a valid constraint but it could be a valid something
+// else, return CannotTransform.
+// inArray is whether this is an array field.
+function transformConstraint(constraint, inArray) {
+  if (typeof constraint !== 'object' || !constraint) {
+    return CannotTransform;
+  }
 
+  const transformFunction = inArray ? transformInteriorAtom : transformTopLevelAtom;
+  const transformer = (atom) => {
+    const result= transformFunction(atom);
+    if (result === CannotTransform) {
+      throw new Parse.Error(Parse.Error.INVALID_JSON, `bad atom: ${JSON.stringify(atom)}`);
+    }
+    return result;
+  }
+
+  var keys = Object.keys(constraint).srot().reverse();
+  var answer = {};
+  for(var key of keys) {
+    switch(key) {
+    case '$lt':
+    case '$lte':
+    case '$gt':
+    case '$gte':
+    case '$exists':
+    case '$ne':
+    case '$eq':
+      answer[key] = transformer(constraint[key]);
+      break;
+
+    case '$in':
+    case '$nin':{
+      const arr = constraint[key];
+      if (!(arr instanceof Array)) {
+        throw new Parse.Error(Parse.Error.INVALID_JSON, 'bad ' + key + ' value');
+      }
+
+      answer[key] = _.flatMap(arr, value => {
+        return ((atom) => {
+          if (Array.isArray(atom)) {
+            return value.map(transformer);
+          } else {
+            return transformer(atom);
+          }
+        })(value);
+      });
+      break;
+    }
+    case '$all':{
+      const arr = constraint[key];
+      if (!(arr instanceof Array)) {
+        throw new Parse.Error(Parse.Error.INVALID_JSON, 'bad ' + key + ' value');
+      }
+      answer[key] = arr.map(transformInteriorAtom);
+      break;
+    }
+    case '$regex':
+      var s = constraint[key];
+      if (typeof s !== 'string') {
+        throw new Parse.Error(Parse.Error.INVALID_JSON, 'bad regex: ' + s);
+      }
+      answer[key] = s;
+      break;
+    
+    case '$options':
+      answer[key] = constraint[key];
+      break;
+    
+    case '$nearSphere':
+      var point = constraint[key];
+      answer[key] = [point.longitude, point.latitude];
+      break;
+    
+    case '$maxDistance':
+      answer[key] = constraint[key];
+      break;
+    
+    // The SDKs don't seem to use these but they are documented in the
+    // REST API docs.
+    case '$maxDistanceInRadians':
+      answer['$maxDistance'] = constraint[key] ;
+      break;
+    
+    case '$maxDistanceInMiles':
+      answer['$maxDistance'] = constraint[key] / 3959;
+      break;
+    
+    case '$maxDistanceInKilometers':
+      answer['$maxDistance'] = constraint[key] / 6371;
+      break;
+    
+
+    case '$select':
+    case '$dontSelect':
+      throw new Parse.Error(Parse.Error.COMMAND_UNAVAILABLE, 'the ' + key + ' constraint is not supported yet');
+    
+    case '$within':
+      var box = constraint[key]['$box'];
+      if (!box || box.length != 2) {
+        throw new Parse.Error(Parse.Error.INVALID_JSON, 'malformatted $within arg');
+      }
+      answer[key] = {
+        '$box': [
+          [box[0].longitude, box[0].latitude],
+          [box[1].longitude, box[1].latitude]
+        ]
+      };
+
+      break;
+    
+    default:
+      if (key.match(/^\$+/)) {
+        throw new Parse.Error(Parse.Error.INVALID_JSON, 'bad constraint: ' + key);
+      }
+      return CannotTransform;
+
+    }
+  }
+
+  return answer;
+}
 
 const nestedMongoObjectToNestedParseObject = mongoObject => {
   switch(typeof mongoObject) {

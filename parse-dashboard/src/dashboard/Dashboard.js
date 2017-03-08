@@ -186,6 +186,9 @@ class Dashboard extends React.Component {
           <Route path="getting_started" component={Empty} />
           <Route path="browser" component={false ? SchemaOverview : Browser} /> //In progress features. Change false to true to work on this feature.
           <Route path="browser/:className" component={Browser} />
+          <Route path="browser/:className/:entityId/:relationName" component={Browser} />
+
+
         </Route>
 
 

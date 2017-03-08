@@ -136,7 +136,7 @@ let BrowserToolbar = ({
     <Toolbar 
       relation={relation}
       filters={filters}
-      section={relation ? `Relation <${$relation.targetClassName}>` : 'Class'}
+      section={relation ? `Relation <${relation.targetClassName}>` : 'Class'}
       subsection={subsection}
       details={details.join(' \u2022 ')}
     >

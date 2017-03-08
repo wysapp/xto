@@ -8,6 +8,7 @@
 
 import React from 'react';
 import Parse from 'parse';
+import Pill from 'components/Pill/Pill.react';
 import { dateStringUTC, isDate } from 'lib/DateUtils';
 import styles from 'components/BrowserCell/BrowserCell.scss';
 import { unselectable } from 'stylesheets/base.scss';

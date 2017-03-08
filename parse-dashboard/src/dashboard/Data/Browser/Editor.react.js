@@ -14,6 +14,8 @@ import DateTimeEditor from 'components/DateTimeEditor/DateTimeEditor.react';
 
 
 let Editor = ({top, left, type, targetClass, value, readonly, width, onCommit}) => {
+
+ 
   let content= null;
   if (type === 'String') {
     content = (

@@ -284,6 +284,14 @@ const dbTypeMatchesObjectType = (dbType, objectType) => {
 }
 
 
+const typeToString = (type) => {
+  if (type.targetClass) {
+    return `${type.type}<${type.targetClass}>`;
+  }
+  return `${type.type || type}`;
+}
+
+
 export default class SchemaController {
   _dbAdapter;
   data;
@@ -647,7 +655,7 @@ export default class SchemaController {
         }
         if (schema.fields[fieldName].type === 'Relation') {
           return database.adapter.deleteFields(className, schema, [fieldName])
-            .then(() => database.adapter.deleteClass(`_Join:${FieldName}:${className}`));
+            .then(() => database.adapter.deleteClass(`_Join:${fieldName}:${className}`));
         }
         return database.adapter.deleteFields(className, schema, [fieldName]);
       })
