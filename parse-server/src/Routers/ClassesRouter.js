@@ -9,6 +9,7 @@ export class ClassesRouter extends PromiseRouter {
 
   handleFind(req) {
     const body = Object.assign(req.body, ClassesRouter.JSONFromQuery(req.query));
+    
     const options = {};
     const allowConstraints = ['skip', 'limit', 'order', 'count', 'keys', 'include', 'redirectClassNameForKey', 'where'];
 

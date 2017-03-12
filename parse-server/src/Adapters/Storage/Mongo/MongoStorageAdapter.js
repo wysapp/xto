@@ -284,7 +284,6 @@ export class MongoStorageAdapter {
   find(className, schema, query, {skip, limit,sort, keys}) {
 
     schema = convertParseSchemaToMongoSchema(schema);
-    
     const mongoWhere = transformWhere(className, query, schema);
     const mongoSort = _.mapKeys(sort, (value, fieldName) => transformKey(className, fieldName, schema));
     const mongoKeys = _.reduce(keys, (memo, key) => {

@@ -416,6 +416,7 @@ DatabaseController.prototype.create = function(className, object, { acl } = {}) 
 
 
 DatabaseController.prototype.relatedIds = function(className, key, owningId) {
+  
   return this.adapter.find(joinTableName(className, key), relationSchema, {owningId}, {})
     .then(results => results.map(result => result.relatedId));
 }
@@ -430,6 +431,7 @@ DatabaseController.prototype.owningIds = function(className, key, relatedIds) {
 
 
 DatabaseController.prototype.reduceInRelation = function(className, query, schema) {
+  
   if (query['$or']) {
     const ors = query['$or'];
     return Promise.all(ors.map((aQuery, index) => {
@@ -444,6 +446,7 @@ DatabaseController.prototype.reduceInRelation = function(className, query, schem
   const promises = Object.keys(query).map((key) => {
     if (query[key] && (query[key]['$in'] || query[key]['$ne'] || query[key]['$nin'] || query[key].__type == 'Pointer')) {
       const t = schema.getExpectedType(className, key);
+      
       if (!t || t.type !== 'Relation') {
         return Promise.resolve(query);
       }
@@ -501,6 +504,7 @@ DatabaseController.prototype.reduceInRelation = function(className, query, schem
 
 
 DatabaseController.prototype.reduceRelationKeys = function(className, query) {
+  
   if (query['$or']) {
     return Promise.all(query['$or'].map((aQuery) => {
       return this.reduceRelationKeys(className, aQuery);
@@ -514,6 +518,7 @@ DatabaseController.prototype.reduceRelationKeys = function(className, query) {
       relatedTo.key,
       relatedTo.object.objectId
     ).then((ids) => {
+      
       delete query['$relatedTo'];
       this.addInObjectIdsIds(ids, query);
       return this.reduceRelationKeys(className, query);
@@ -713,7 +718,7 @@ DatabaseController.prototype.deleteSchema = function(className) {
 
 
 function joinTableName(className, key) {
-  return `Join:${key}:${className}`;
+  return `_Join:${key}:${className}`;
 }
 
 module.exports = DatabaseController;

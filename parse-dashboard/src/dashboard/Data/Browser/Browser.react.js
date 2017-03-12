@@ -121,9 +121,11 @@ export default class Browser extends DashboardView {
     const {className, entityId, relationName } = props.params;
     const isRelationRoute = entityId && relationName;
     let relation = this.state.relation;
+    
     if (isRelationRoute && !relation) {
       const parentObjectQuery = new Parse.Query(className);
       const parent = await parentObjectQuery.get(entityId, {useMasterKey: true});
+      
       relation = parent.relation(relationName);
     }
 
@@ -319,7 +321,9 @@ export default class Browser extends DashboardView {
 
 
   async fetchRelation(relation, filters = new List()) {
+    
     const data = await this.fetchParseData(relation, filters);
+    
     const relationCount = await this.fetchRelationCount(relation);
 
     await this.setState({

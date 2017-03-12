@@ -424,6 +424,7 @@ RestQuery.prototype.runFind = function(options = {}) {
   return this.config.database.find(
     this.className, this.restWhere, findOptions
   ).then((results) => {
+
     if (this.className === '_User') {
       for (var result of results) {
         cleanResultOfSensitiveUserInfo(result, this.auth, this.config);
