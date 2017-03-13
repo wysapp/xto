@@ -119,6 +119,77 @@ function isFileStreamable(req, filesController) {
 
 // handleFileStream is licenced under Creative Commons Attribution 4.0 International License (https://creativecommons.org/licenses/by/4.0/).
 // Author: LEROIB at weightingformypizza (https://weightingformypizza.wordpress.com/2015/06/24/stream-html5-media-content-like-video-audio-from-mongodb-using-express-and-gridstore/).
+function handleFileStream(stream, req, res, contentType) {
+  var buffer_size = 1024 * 1024;  //1024Kb
+  // Range request, partiall stream the file
+  var parts = req.get('Range').replace(/bytes=/, "").split("-");
+  var partialstart = parts[0];
+  var partialend = parts[1];
+  var start = partialstart ? parseInt(partialstart, 10) : 0;
+  var end = partialend ? parseInt(partialend, 10) : stream.length - 1;
+  var chunksize = (end - start) + 1;
 
+  if (chunksize == 1) {
+    start = 0;
+    partialend = false;
+  }
+
+  if (!partialend) {
+    if (((stream.length - 1) - start) < (buffer_size)) {
+      end = stream.length -1;
+    } else {
+      end = start + (buffer_size);
+    }
+    chunksize = (end - start) + 1;
+  }
+
+  if (start == 0 && end == 2) {
+    chunksize = 1;
+  }
+
+  res.writeHead(206, {
+    'Content-Range': 'bytes ' + start + '-' + end + '/' + stream.length,
+    'Accept-Ranges': 'bytes',
+    'Content-Length': chunksize,
+    'Content-Type': contentType
+  });
+
+  stream.seek(start, function() {
+    // get gridFile stream
+
+    var gridFileStream = stream.stream(true);
+    var bufferAvail = 0;
+    var range = (end - start) + 1;
+    var totalbyteswanted = (end - start) + 1;
+    var totalbyteswritten = 0;
+
+    gridFileStream.on('data', function(buff) {
+      bufferAvail += buff.length;
+
+      if (bufferAvail < range) {
+        if (bufferAvail > 0) {
+          res.write(buff);
+          totalbyteswritten += buff.length;
+          range -= buff.length;
+          bufferAvail -= buff.length;
+        }
+      } else {
+        if (bufferAvail > 0) {
+          const buffer = buff.slice(0,range);
+          res.write(buffer);
+          totalbyteswritten += buffer.length;
+          bufferAvail -= range;
+        }
+      }
+
+      if (totalbyteswritten >= totalbyteswanted) {
+        stream.close();
+        res.end();
+        this.destroy();
+      }
+    });
+  });
+
+}
 
 
