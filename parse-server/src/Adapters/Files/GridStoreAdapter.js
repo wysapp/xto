@@ -19,6 +19,55 @@ export class GridStoreAdapter extends FilesAdapter {
 
     this._databaseURI = mongoDatabaseURI;
   }
+
+
+  _connect() {
+    if (!this._connectionPromise) {
+      this._connectionPromise = MongoClient.connect(this._databaseURI);
+    }
+    return this._connectionPromise;
+  }
+
+  // For a given config object, filename, and data, store a file
+  // Returns a promise
+  createFile(filename: string, data) {
+    return this._connect().then(database => {
+      const gridStore = new GridStore(database, filename, 'w');
+      return gridStore.open();
+    }).then(gridStore => {
+      return gridStore.write(data);
+    }).then(gridStore => {
+      return gridStore.close();
+    });
+  }
+
+  getFileData(filename: string){
+    return this._connect().then(database => {
+      return GridStore.exist(database, filename)
+        .then(() => {
+          const gridStore = new GridStore(database, filename, 'r');
+          return gridStore.open();
+        });
+    }).then(gridStore => {
+      gridStore.read();
+    });
+  }
+
+
+  getFileLocation(config, filename) {
+    
+    return (config.mount + '/files/' + config.applicationId + '/' + encodeURIComponent(filename));
+  }
+
+
+  getFileStream(filename: string) {
+    return this._connect().then(database => {
+      return GridStore.exist(database, filename).then(() => {
+        const gridStore = new GridStore(database, filename, 'r');
+        return gridStore.open();
+      });
+    });
+  }
 }
 
 export default GridStoreAdapter;

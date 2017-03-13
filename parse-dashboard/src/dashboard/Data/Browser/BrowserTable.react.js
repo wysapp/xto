@@ -206,6 +206,7 @@ export default class BrowserTable extends React.Component {
               readonly={readonly}
               width={width}
               onCommit={(newValue) => {
+                
                 if (newValue !== value) {
                   this.props.updateRow(
                     this.props.current.row,

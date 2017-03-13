@@ -608,6 +608,78 @@ function transformConstraint(constraint, inArray) {
   return answer;
 }
 
+
+// Transforms an update operator from REST format to mongo format.
+// To be transformed, the input should have an __op field.
+// If flatten is true, this will flatten operators to their static
+// data format. For example, an increment of 2 would simply become a
+// 2.
+// The output for a non-flattened operator is a hash with __op being
+// the mongo op, and arg being the argument.
+// The output for a flattened operator is just a value.
+// Returns undefined if this should be a no-op.
+function transformUpdateOperator({
+  __op,
+  amount,
+  objects
+}, flatten) {
+  switch(__op) {
+  case 'Delete':
+    if (flatten) {
+      return undefined;
+    } else {
+      return { __op: '$unset', arg: ''};
+    }
+  
+  case 'Increment':
+    if (typeof amount !== 'number') {
+      throw new Parse.Error(Parse.Error.INVALID_JSON, 'incrementing must provide a number') ;
+    }
+    if (flatten) {
+      return amount;
+    } else {
+      return { __op: '$inc', arg: amount};
+    }
+  
+  case 'Add':
+  case 'AddUnique':
+    if (!(objects instanceof Array)) {
+      throw new Parse.Error(Parse.Error.INVALID_JSON, 'objects to add must be an array');
+    }
+
+    var toAdd = objects.map(transformInteriorAtom);
+    if (flatten) {
+      return toAdd;
+    } else {
+      var mongoOp = {
+        Add: '$push',
+        AddUnique: '$addToSet'
+      }[__op];
+
+      return {__op: mongoOp, arg: {'$each': toAdd}};
+    }
+  
+  case 'Remove':
+    if (!(objects instanceof Array) ) {
+      throw new Parse.Error(Parse.Error.INVALID_JSON, 'objects to remove must be an array');
+    }
+
+    var toRemove = objects.map(transformInteriorAtom);
+    if (flatten) {
+      return [];
+    } else {
+      return {__op: '$pullAll', arg: toRemove};
+    }
+  
+  default:
+    throw new Parse.Error(Parse.Error.COMMAND_UNAVAILABLE, `The ${__op} operator is not supported yet.`);
+
+
+  }
+}
+
+
+
 const nestedMongoObjectToNestedParseObject = mongoObject => {
   switch(typeof mongoObject) {
   case 'string':

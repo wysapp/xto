@@ -10,6 +10,7 @@ import React from 'react';
 import Parse from 'parse';
 import Pill from 'components/Pill/Pill.react';
 import { dateStringUTC, isDate } from 'lib/DateUtils';
+import getFileName from 'lib/getFileName';
 import styles from 'components/BrowserCell/BrowserCell.scss';
 import { unselectable } from 'stylesheets/base.scss';
 
@@ -44,6 +45,7 @@ let BrowserCell = ({ type, value, hidden, width, current, onSelect, readonly, on
   } else if (type === 'Object' || type === 'Bytes') {
     content = JSON.stringify(value);
   } else if (type === 'File') {
+    
     if (value.url()) {
       content = <a href={value.url()} target="_blank"><Pill value={getFileName(value)} /></a>;
     } else {

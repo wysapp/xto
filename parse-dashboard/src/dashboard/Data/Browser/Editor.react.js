@@ -11,7 +11,7 @@ import Parse from 'parse';
 import StringEditor from 'components/StringEditor/StringEditor.react';
 import NumberEditor from 'components/NumberEditor/NumberEditor.react';
 import DateTimeEditor from 'components/DateTimeEditor/DateTimeEditor.react';
-
+import FileEditor from 'components/FileEditor/FileEditor.react';
 
 let Editor = ({top, left, type, targetClass, value, readonly, width, onCommit}) => {
 
@@ -74,7 +74,15 @@ let Editor = ({top, left, type, targetClass, value, readonly, width, onCommit}) 
         onCommit={onCommit}
       />
     );
-  }
+  } else if ( type === 'File') {
+    content = (
+      <FileEditor 
+        value={value}
+        width={width}
+        onCommit={onCommit}
+      />
+    );
+  }    
 
   return (
     <div style={{ position: 'absolute', top: top, left: left}}>

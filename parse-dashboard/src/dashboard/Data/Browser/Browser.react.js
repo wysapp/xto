@@ -412,7 +412,6 @@ export default class Browser extends DashboardView {
       obj.set(attr, value);
     }
 
-
     obj.save(null, { useMasterKey: true}).then(() => {
       const state = { data: this.state.data, lastError: null };
       if (isNewObject) {
@@ -454,6 +453,7 @@ export default class Browser extends DashboardView {
       }
       this.setState(state);
     }, (error) => {
+      
       let msg = typeof error === 'string' ? error : error.message;
       if (msg) {
         msg = msg[0].toUpperCase() + msg.substr(1);

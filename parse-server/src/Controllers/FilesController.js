@@ -2,12 +2,40 @@
 
 import AdaptableController from './AdaptableController';
 import { FilesAdapter } from '../Adapters/Files/FilesAdapter';
+import { randomHexString } from '../cryptoUtils';
 import path from 'path';
 import mime from 'mime';
 
 const legacyFilesRegex = new RegExp("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}-.*");
 
 export class FilesController extends AdaptableController {
+
+  getFileData(config, filename) {
+    return this.adapter.getFileData(filename);
+  }
+
+  createFile(config, filename, data, contentType){
+    const extname = path.extname(filename);
+    const hasExtension = extname.length > 0;
+
+    if (!hasExtension && contentType && mime.extension(contentType)) {
+      filename = filename + '.' + mime.extension(contentType);
+    } else if (hasExtension && !contentType) {
+      contentType = mime.lookup(filename);
+    }
+
+    filename = randomHexString(32) + '_' + filename;
+
+    var location = this.adapter.getFileLocation(config, filename);
+    
+    return this.adapter.createFile(filename, data, contentType).then(() => {
+      return Promise.resolve({
+        url: location,
+        name: filename
+      });
+    });
+  }
+
 
   /**
    * Find file references in REST-format object and adds the url key
@@ -52,6 +80,11 @@ export class FilesController extends AdaptableController {
 
   expectedAdapterType() {
     return FilesAdapter;
+  }
+
+
+  getFileStream(config, filename) {
+    return this.adapter.getFileStream(filename);
   }
 
 }
