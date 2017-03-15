@@ -77,6 +77,7 @@ export default class Browser extends DashboardView {
     this.selectRow = this.selectRow.bind(this);
     this.updateRow = this.updateRow.bind(this);
     this.updateOrdering = this.updateOrdering.bind(this);
+    this.handlePointerClick = this.handlePointerClick.bind(this);
     this.setRelation = this.setRelation.bind(this);
     this.showAddColumn = this.showAddColumn.bind(this);
     this.addRow = this.addRow.bind(this);
@@ -394,6 +395,17 @@ export default class Browser extends DashboardView {
   }
 
 
+  handlePointerClick({ className, id }) {
+    let filters = JSON.stringify([{
+      field: 'objectId',
+      constraint: 'eq',
+      compareTo: id
+    }]);
+
+    history.push(this.context.generatePath(`browser/${className}?filters=${encodeURIComponent(filters)}`));
+  }
+
+
   updateRow(row, attr, value) {
     
     const isNewObject = row < 0;
@@ -632,6 +644,7 @@ export default class Browser extends DashboardView {
             relation={this.state.relation}
             updateRow={this.updateRow}
             updateOrdering={this.updateOrdering}
+            onPointerClick={this.handlePointerClick}
             setRelation={this.setRelation}
             onAddColumn={this.showAddColumn}
             onAddRow={this.addRow}

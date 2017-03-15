@@ -4,6 +4,7 @@ import Parse from 'parse/node';
 
 
 function mongoFieldToParseSchemaField(type) {
+  
   if(type[0] === '*') {
     return {
       type: 'Pointer',
@@ -93,18 +94,21 @@ function _mongoSchemaQueryFromNameQuery(name: string, query) {
 }
 
 
-function parseFieldTypeToMongoFieldType({type, targetClass}) {
-  switch(type) {
-    case 'Pointer': return `*${targetClass}`;
-    case 'Relation': return `relation<${targetClass}>`;
-    case 'Number': return 'number';
-    case 'String': return 'string';
-    case 'Boolean': return 'boolean';
-    case 'Date': return 'date';
-    case 'Object': return 'object';
-    case 'Array': return 'array';
-    case 'File': return 'file';
-  };
+// Returns a type suitable for inserting into mongo _SCHEMA collection.
+// Does no validation. That is expected to be done in Parse Server.
+function parseFieldTypeToMongoFieldType({ type, targetClass }) {
+  switch (type) {
+  case 'Pointer':  return `*${targetClass}`;
+  case 'Relation': return `relation<${targetClass}>`;
+  case 'Number':   return 'number';
+  case 'String':   return 'string';
+  case 'Boolean':  return 'boolean';
+  case 'Date':     return 'date';
+  case 'Object':   return 'object';
+  case 'Array':    return 'array';
+  case 'GeoPoint': return 'geopoint';
+  case 'File':     return 'file';
+  }
 }
 
 
@@ -143,6 +147,7 @@ class MongoSchemaCollection {
 
 
   upsertSchema(name: string, query: string, update) {
+    
     return this._collection.upsertOne(_mongoSchemaQueryFromNameQuery(name, query), update);
   }
 

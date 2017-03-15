@@ -54,6 +54,7 @@ export default class BrowserTable extends React.Component {
   renderRow({row, obj, rowWidth}) {
     
     let attributes = obj.attributes;
+    
     let index = row - this.state.offset;
     return (
       <div key={`row${index}`} className={styles.tableRow} style={{minWidth: rowWidth}}>
@@ -93,7 +94,7 @@ export default class BrowserTable extends React.Component {
               current={current}
               onSelect={() => this.props.setCurrent({row: row, col: j})}
               onEditChange={(state) => this.props.setEditing(state)}
-
+              onPointerClick={this.props.onPointerClick}
               setRelation={this.props.setRelation}
               value={attr}
               hidden={hidden}
@@ -149,6 +150,7 @@ export default class BrowserTable extends React.Component {
       for (let i = this.state.offset; i < end ; i++) {
         let index = i - this.state.offset;
         let obj = this.props.data[i];
+        
         rows[index] = this.renderRow({row: i, obj: obj, rowWidth: rowWidth});
       }
 

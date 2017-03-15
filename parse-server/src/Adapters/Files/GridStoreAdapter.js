@@ -49,7 +49,7 @@ export class GridStoreAdapter extends FilesAdapter {
           return gridStore.open();
         });
     }).then(gridStore => {
-      gridStore.read();
+      return gridStore.read();
     });
   }
 

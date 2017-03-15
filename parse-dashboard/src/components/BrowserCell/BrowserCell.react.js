@@ -31,6 +31,7 @@ let BrowserCell = ({ type, value, hidden, width, current, onSelect, readonly, on
     content = '(null)';
     classes.push(styles.empty);
   } else if (type === 'Pointer') {
+    
     content = (
       <a href="javascript:;" onClick={onPointerClick.bind(undefined, value)}>
         <Pill value={value.id} />

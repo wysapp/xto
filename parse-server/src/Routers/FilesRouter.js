@@ -45,7 +45,7 @@ export class FilesRouter {
       }).catch(() => {
         res.status(404);
         res.set('Content-Type', 'text/plain');
-        res.end('File not found.');
+        res.end('File stream not found.');
       });
     } else {
       filesController.getFileData(config, filename).then((data)=> {
@@ -120,7 +120,7 @@ function isFileStreamable(req, filesController) {
 // handleFileStream is licenced under Creative Commons Attribution 4.0 International License (https://creativecommons.org/licenses/by/4.0/).
 // Author: LEROIB at weightingformypizza (https://weightingformypizza.wordpress.com/2015/06/24/stream-html5-media-content-like-video-audio-from-mongodb-using-express-and-gridstore/).
 function handleFileStream(stream, req, res, contentType) {
-  var buffer_size = 1024 * 1024;  //1024Kb
+  var buffer_size = 1024 * 1024;//1024Kb
   // Range request, partiall stream the file
   var parts = req.get('Range').replace(/bytes=/, "").split("-");
   var partialstart = parts[0];
@@ -136,8 +136,8 @@ function handleFileStream(stream, req, res, contentType) {
 
   if (!partialend) {
     if (((stream.length - 1) - start) < (buffer_size)) {
-      end = stream.length -1;
-    } else {
+      end = stream.length - 1;
+    }else{
       end = start + (buffer_size);
     }
     chunksize = (end - start) + 1;
@@ -151,29 +151,31 @@ function handleFileStream(stream, req, res, contentType) {
     'Content-Range': 'bytes ' + start + '-' + end + '/' + stream.length,
     'Accept-Ranges': 'bytes',
     'Content-Length': chunksize,
-    'Content-Type': contentType
+    'Content-Type': contentType,
   });
 
-  stream.seek(start, function() {
+  stream.seek(start, function () {
     // get gridFile stream
-
     var gridFileStream = stream.stream(true);
     var bufferAvail = 0;
     var range = (end - start) + 1;
     var totalbyteswanted = (end - start) + 1;
     var totalbyteswritten = 0;
-
-    gridFileStream.on('data', function(buff) {
+    // write to response
+    gridFileStream.on('data', function (buff) {
       bufferAvail += buff.length;
-
+      //Ok check if we have enough to cover our range
       if (bufferAvail < range) {
+        //Not enough bytes to satisfy our full range
         if (bufferAvail > 0) {
+          //Write full buffer
           res.write(buff);
           totalbyteswritten += buff.length;
           range -= buff.length;
           bufferAvail -= buff.length;
         }
       } else {
+        //Enough bytes to satisfy our full range!
         if (bufferAvail > 0) {
           const buffer = buff.slice(0,range);
           res.write(buffer);
@@ -181,15 +183,13 @@ function handleFileStream(stream, req, res, contentType) {
           bufferAvail -= range;
         }
       }
-
       if (totalbyteswritten >= totalbyteswanted) {
+        //totalbytes = 0;
         stream.close();
         res.end();
         this.destroy();
       }
     });
   });
-
 }
-
 

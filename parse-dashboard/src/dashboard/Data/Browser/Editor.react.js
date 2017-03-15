@@ -12,6 +12,7 @@ import StringEditor from 'components/StringEditor/StringEditor.react';
 import NumberEditor from 'components/NumberEditor/NumberEditor.react';
 import DateTimeEditor from 'components/DateTimeEditor/DateTimeEditor.react';
 import FileEditor from 'components/FileEditor/FileEditor.react';
+import GeoPointEditor from 'components/GeoPointEditor/GeoPointEditor.react';
 
 let Editor = ({top, left, type, targetClass, value, readonly, width, onCommit}) => {
 
@@ -74,6 +75,16 @@ let Editor = ({top, left, type, targetClass, value, readonly, width, onCommit}) 
         onCommit={onCommit}
       />
     );
+  
+  } else if (type === 'GeoPoint') {
+    content= (
+      <GeoPointEditor
+        value={value}
+        width={width}
+        onCommit={onCommit}
+      />
+    );
+
   } else if ( type === 'File') {
     content = (
       <FileEditor 
@@ -82,7 +93,26 @@ let Editor = ({top, left, type, targetClass, value, readonly, width, onCommit}) 
         onCommit={onCommit}
       />
     );
-  }    
+  } else if (type === 'Pointer') {
+    let encodeCommit = (pointer) => {
+      if (pointer.length === 0) {
+        onCommit(undefined);
+      } else {
+        onCommit(Parse.Object.fromJSON({
+          className: targetClass,
+          objectId: pointer
+        }));
+      }
+    };
+
+    content = (
+      <StringEditor
+        value={value ? value.id : ''}
+        width={width}
+        onCommit={encodeCommit}
+      />
+    );
+  }
 
   return (
     <div style={{ position: 'absolute', top: top, left: left}}>
