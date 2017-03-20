@@ -60,6 +60,7 @@ export default class DataBrowserHeaderBar extends React.Component {
             targetClass={targetClass}
             order={order}
             index={i}
+            moveDataBrowserHeader={this.props.handleDragDrop}
           />
         </div>
       );

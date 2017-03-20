@@ -33,7 +33,9 @@ export default class BrowserTable extends React.Component {
 
     this.state = {
       offset: 0,
-    }
+    };
+
+    this.handleScroll = this.handleScroll.bind(this);
   }
 
   componentWillReceiveProps(props, context) {
@@ -49,6 +51,43 @@ export default class BrowserTable extends React.Component {
       this.setState({ offset: 0 });
       this.refs.table.scrollTop = 0;
     }
+  }
+
+
+  componentDidMount() {
+    this.refs.table.addEventListener('scroll', this.handleScroll);
+  }
+
+  componentWillUnmount() {
+    this.refs.table.removeEventListener('scroll', this.handleScroll);
+  }
+
+  handleScroll() {
+    if (scrolling) {
+      return;
+    }
+
+    if (!this.props.data || this.props.data.length === 0) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      let rowsAbove = Math.floor(this.refs.table.scrollTop / ROW_HEIGHT);
+      let offset = this.state.offset;
+      if (rowsAbove - this.state.offset > 20) {
+        offset = Math.floor(rowsAbove / 10) * 10 - 10;
+      } else if (rowsAbove - this.state.offset < 10) {
+        offset = Math.max(0, Math.floor(rowsAbove / 10) * 10 - 30);
+      }
+
+      if (this.state.offset !== offset) {
+        this.setState({offset});
+      }
+
+      if (this.props.maxFetched - offset < 100) {
+        this.props.fetchNextPage();
+      }
+    });
   }
 
   renderRow({row, obj, rowWidth}) {
@@ -301,6 +340,7 @@ export default class BrowserTable extends React.Component {
           headers={headers}
           updateOrdering={this.props.updateOrdering}
           readonly={!!this.props.relation}
+          handleDragDrop={this.props.handleHeaderDragDrop}
           onResize={this.props.handleResize}
           onAddColumn={this.props.onAddColumn}
         />

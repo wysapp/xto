@@ -12,18 +12,61 @@ import PropTypes from 'lib/PropTypes';
 import { unselectable } from 'stylesheets/base.scss';
 import styles from 'components/DataBrowserHeader/DataBrowserHeader.scss';
 
+const Types = {
+  DATA_BROWSER_HEADER: 'dataBrowserHeader'
+};
+
+const dataBrowserHeaderTarget = {
+  drop(props, monitor, component ) {
+    const item = monitor.getItem();
+
+    if (!item) {
+      return;
+    }
+
+    const dragIndex = item.index;
+    const hoverIndex = props.index;
+
+    if (dragIndex === hoverIndex) {
+      return;
+    }
+
+    props.moveDataBrowserHeader(dragIndex, hoverIndex);
+  },
+};
+
+const dataBrowserHeaderSource = {
+  beginDrag(props) {
+    return {
+      name: props.name,
+      index: props.index,
+    };
+  }
+};
 
 
+@DropTarget(Types.DATA_BROWSER_HEADER, dataBrowserHeaderTarget, (connect, monitor) => ({
+  connectDropTarget: connect.dropTarget(),
+  isOver: monitor.isOver()
+}))
+@DragSource(Types.DATA_BROWSER_HEADER, dataBrowserHeaderSource, (connect, monitor) => ({
+  connectDragSource: connect.dragSource(),
+  isDragging: monitor.isDragging()
+}))
 export default class DataBrowserHeader extends React.Component {
   render() {
 
     let {
+      connectDragSource,
+      connectDropTarget,
+      connectDragPreview,
       name,
       type, 
       targetClass,
       order,
       style,
-      
+      isDragging,
+      isOver,
       index
     } = this.props;
 
@@ -32,7 +75,15 @@ export default class DataBrowserHeader extends React.Component {
       classes.push(styles[order]);
     }
 
-    return (
+    if (isOver && !isDragging) {
+      classes.push(styles.over);
+    }
+
+    if (isDragging) {
+      classes.push(styles.dragging);
+    }
+
+    return connectDragSource(connectDropTarget(
       <div className={classes.join(' ')} style={style}>
         <div className={styles.name}>{name}</div>
         <div className={styles.type}>
@@ -42,7 +93,7 @@ export default class DataBrowserHeader extends React.Component {
           }
         </div>
       </div>
-    );
+    ));
   }
 }
 

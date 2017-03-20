@@ -91,6 +91,21 @@ export default class DataBrowser extends React.Component {
     });
   }
 
+
+  /**
+   * drag and drop callback when header is dropped into valid location
+   * @param  {Number} dragIndex  - index of  headerbar moved from
+   * @param  {Number} hoverIndex - index of headerbar moved to left of
+   */
+  handleHeaderDragDrop(dragIndex, hoverIndex) {
+    let newOrder = this.state.order;
+    let movedIndex = newOrder.splice(dragIndex, 1);
+    newOrder.splice(hoverIndex, 0, movedIndex[0]);
+    this.setState({ order: newOrder }, () => {
+      this.updatePreferences(newOrder);
+    });
+  }
+
   handleKey(e) {
 
   }
@@ -118,7 +133,7 @@ export default class DataBrowser extends React.Component {
           current={this.state.current}
           editing={this.state.editing}
           className={className}
-
+          handleHeaderDragDrop={this.handleHeaderDragDrop.bind(this)}
           handleResize={this.handleResize.bind(this)}
           setEditing={this.setEditing.bind(this)}
           setCurrent={this.setCurrent.bind(this)}
